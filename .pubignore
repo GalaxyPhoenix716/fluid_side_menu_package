@@ -1,0 +1,26 @@
+# Ignore IDE files and configurations
+.idea/
+*.iml
+.metadata
+
+# Ignore local build tool caches and files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# Ignore OS-specific metadata
+.DS_Store
+Thumbs.db
+
+# Ignore build directory outputs
+build/
+
+# Ignore example build files and caches
+example/build/
+example/.dart_tool/
+example/pubspec.lock
+example/*.iml
+example/.idea/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
