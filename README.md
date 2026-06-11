@@ -3,7 +3,7 @@
 [![Pub Version](https://img.shields.io/pub/v/fluid_side_menu)](https://pub.dev/packages/fluid_side_menu)
 [![Pub Likes](https://img.shields.io/pub/likes/fluid_side_menu)](https://pub.dev/packages/fluid_side_menu/likers)
 [![Platform](https://img.shields.io/badge/platform-flutter-blue)](https://flutter.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 A premium, highly-customizable fluid side navigation drawer for Flutter. It features an organic, gooey liquid-reveal transition (using high-performance custom vector splines), staggered menu option entrance animations, and rich selection feedback behaviors.
 
@@ -31,9 +31,10 @@ A premium, highly-customizable fluid side navigation drawer for Flutter. It feat
 
 ## Why Fluid Side Menu?
 
-While standard side drawers transition rigidly across the screen, Fluid Side Menu uses organic motion curves and wavy vector splines to deliver a fluid, high-fidelity navigational experience. 
+While standard side drawers transition rigidly across the screen, Fluid Side Menu uses organic motion curves and wavy vector splines to deliver a fluid, high-fidelity navigational experience.
 
 Key benefits include:
+
 - **No Edge Pixelation:** The custom waves are drawn dynamically as sharp vector paths, avoiding the pixelation or fuzzy edges common with raster masks.
 - **Optimized Performance:** Leverages isolated RepaintBoundary nodes and linear animation inputs to run smoothly at 60fps/120fps even on lower-end devices.
 - **Custom Easing Curves:** The fluid wave transition supports custom animation curves, allowing you to tailor the physics of the goo transition (e.g. springy elastic waves, snappy deceleration, or bounce reveals).
@@ -210,45 +211,45 @@ FluidSideMenu(
 
 ### FluidSideMenu Options
 
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `menuItems` | `List<FluidMenuItem>` | Required | The navigation screens, labels, and icons. |
-| `child` | `Widget?` | `null` | Optional static override for the main screen (if not relying on the menu item pages). |
-| `fluidColor` | `Color` | `Colors.black` | The background color of the reveal wave drawer. |
-| `fluidGradient` | `Gradient?` | `null` | Gradient override for the reveal wave background. |
-| `duration` | `Duration` | `Duration(milliseconds: 650)` | Length of the opening and closing transitions. |
-| `animationCurve` | `Curve` | `Curves.easeInOutCubic` | Easing curve for the fluid transition. |
-| `showBuiltInButtons` | `bool` | `true` | Auto-renders the top-left menu open button and top-right close toggle button. |
-| `menuIcon` | `Widget?` | `null` | Custom icon widget for the main menu open toggle button. |
-| `closeIcon` | `Widget?` | `null` | Custom icon widget for the close toggle button. |
-| `buttonRadius` | `double` | `20.0` | Initial circle radius of the menu toggle button. |
-| `menuAnimationType` | `FluidMenuAnimationType` | `FluidMenuAnimationType.slide` | Entry transition type for options (`fade`, `scale`, `slide`). |
-| `selectAnimationType` | `FluidMenuSelectAnimationType` | `FluidMenuSelectAnimationType.scalePulse` | Tapped selection feedback style (`iconSlideSwap`, `scalePulse`, etc.). |
-| `menuItemTextStyle` | `TextStyle?` | `null` | Text styling of option labels. |
-| `menuItemTextColor` | `Color?` | `null` | Default text color fallback for all items (if not set in `FluidMenuItem`). |
-| `menuItemIconColor` | `Color?` | `null` | Default icon color fallback for all items (if not set in `FluidMenuItem`). |
-| `menuItemSpacing` | `double` | `12.0` | Spacing between option icons and text labels. |
+| Parameter             | Type                           | Default                                   | Description                                                                           |
+| :-------------------- | :----------------------------- | :---------------------------------------- | :------------------------------------------------------------------------------------ |
+| `menuItems`           | `List<FluidMenuItem>`          | Required                                  | The navigation screens, labels, and icons.                                            |
+| `child`               | `Widget?`                      | `null`                                    | Optional static override for the main screen (if not relying on the menu item pages). |
+| `fluidColor`          | `Color`                        | `Colors.black`                            | The background color of the reveal wave drawer.                                       |
+| `fluidGradient`       | `Gradient?`                    | `null`                                    | Gradient override for the reveal wave background.                                     |
+| `duration`            | `Duration`                     | `Duration(milliseconds: 650)`             | Length of the opening and closing transitions.                                        |
+| `animationCurve`      | `Curve`                        | `Curves.easeInOutCubic`                   | Easing curve for the fluid transition.                                                |
+| `showBuiltInButtons`  | `bool`                         | `true`                                    | Auto-renders the top-left menu open button and top-right close toggle button.         |
+| `menuIcon`            | `Widget?`                      | `null`                                    | Custom icon widget for the main menu open toggle button.                              |
+| `closeIcon`           | `Widget?`                      | `null`                                    | Custom icon widget for the close toggle button.                                       |
+| `buttonRadius`        | `double`                       | `20.0`                                    | Initial circle radius of the menu toggle button.                                      |
+| `menuAnimationType`   | `FluidMenuAnimationType`       | `FluidMenuAnimationType.slide`            | Entry transition type for options (`fade`, `scale`, `slide`).                         |
+| `selectAnimationType` | `FluidMenuSelectAnimationType` | `FluidMenuSelectAnimationType.scalePulse` | Tapped selection feedback style (`iconSlideSwap`, `scalePulse`, etc.).                |
+| `menuItemTextStyle`   | `TextStyle?`                   | `null`                                    | Text styling of option labels.                                                        |
+| `menuItemTextColor`   | `Color?`                       | `null`                                    | Default text color fallback for all items (if not set in `FluidMenuItem`).            |
+| `menuItemIconColor`   | `Color?`                       | `null`                                    | Default icon color fallback for all items (if not set in `FluidMenuItem`).            |
+| `menuItemSpacing`     | `double`                       | `12.0`                                    | Spacing between option icons and text labels.                                         |
 
 ### FluidMenuItem Options
 
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `label` | `String` | Required | Label text displayed for the option. |
-| `page` | `Widget` | Required | Target page screen widget to show when tapped. |
-| `icon` | `Widget?` | `null` | Prefix icon widget. |
-| `textColor` | `Color?` | `null` | Individual custom override for the label text color. |
-| `iconColor` | `Color?` | `null` | Individual custom override for the prefix icon color. |
+| Parameter   | Type      | Default  | Description                                           |
+| :---------- | :-------- | :------- | :---------------------------------------------------- |
+| `label`     | `String`  | Required | Label text displayed for the option.                  |
+| `page`      | `Widget`  | Required | Target page screen widget to show when tapped.        |
+| `icon`      | `Widget?` | `null`   | Prefix icon widget.                                   |
+| `textColor` | `Color?`  | `null`   | Individual custom override for the label text color.  |
+| `iconColor` | `Color?`  | `null`   | Individual custom override for the prefix icon color. |
 
 ### Selection Feedback Animations
 
-| Value | Behavior |
-| :--- | :--- |
-| `iconSlideSwap` | Selected item's label fades/slides out, collapsing size to let the icon center horizontally. Others fade to `0.25` opacity. |
-| `scalePulse` | Selected item scales up to `1.08`, others dim to `0.35` opacity. |
-| `slideRight` | Selected item slides right, others dim to `0.35` opacity. |
-| `scaleDownOthers` | Selected item stays stable, others scale down to `0.9` and dim. |
-| `fadeOthers` | Selected item stays stable, others dim. |
-| `none` | Immediate nav execution without feedback animation. |
+| Value             | Behavior                                                                                                                    |
+| :---------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| `iconSlideSwap`   | Selected item's label fades/slides out, collapsing size to let the icon center horizontally. Others fade to `0.25` opacity. |
+| `scalePulse`      | Selected item scales up to `1.08`, others dim to `0.35` opacity.                                                            |
+| `slideRight`      | Selected item slides right, others dim to `0.35` opacity.                                                                   |
+| `scaleDownOthers` | Selected item stays stable, others scale down to `0.9` and dim.                                                             |
+| `fadeOthers`      | Selected item stays stable, others dim.                                                                                     |
+| `none`            | Immediate nav execution without feedback animation.                                                                         |
 
 ---
 
@@ -264,4 +265,4 @@ Please use the repository's GitHub Issues page to report bugs, request documenta
 
 ### License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the BSD 3-Clause License - see the LICENSE file for details.

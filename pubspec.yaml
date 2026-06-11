@@ -7,7 +7,7 @@ issue_tracker: https://github.com/GalaxyPhoenix716/fluid_side_menu_package/issue
 
 environment:
   sdk: ^3.12.1
-  flutter: ">=1.17.0"
+  flutter: ">=3.11.3"
 
 dependencies:
   flutter:

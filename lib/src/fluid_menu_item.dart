@@ -18,6 +18,7 @@ class FluidMenuItem {
   /// Optional custom icon color for this specific menu item.
   final Color? iconColor;
 
+  /// Creates a [FluidMenuItem] containing navigation and style properties.
   const FluidMenuItem({
     required this.label,
     required this.page,

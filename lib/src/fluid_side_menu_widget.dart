@@ -4,6 +4,11 @@ import '../fluid_side_menu.dart';
 import 'fluid_menu_painter.dart';
 import 'fluid_menu_item.dart';
 
+/// A premium, highly-customizable fluid side navigation drawer widget.
+///
+/// It renders an organic, gooey liquid-reveal background transition across
+/// five distance-staggered expansion centers, reveals menu options using
+/// staggered entry animations, and provides rich interactive selection feedback.
 class FluidSideMenu extends StatefulWidget {
   /// Optional static override for child. If null, the selected page from
   /// `menuItems` will be shown automatically.
@@ -73,6 +78,7 @@ class FluidSideMenu extends StatefulWidget {
   /// Easing curve for the fluid transition.
   final Curve animationCurve;
 
+  /// Creates a [FluidSideMenu] navigation drawer with transition properties.
   const FluidSideMenu({
     super.key,
     required this.menuItems,
@@ -101,6 +107,7 @@ class FluidSideMenu extends StatefulWidget {
   State<FluidSideMenu> createState() => FluidSideMenuState();
 }
 
+/// State for the [FluidSideMenu] widget that drives the transition animations.
 class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -112,7 +119,10 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
   // Track currently active page index
   int _activePageIndex = 0;
 
+  /// Returns whether the side navigation drawer is currently open.
   bool get isMenuOpen => _controller.value > 0.5;
+
+  /// Returns the current transition progress animation.
   Animation<double> get animation => _animation;
 
   @override

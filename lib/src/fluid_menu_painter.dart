@@ -1,13 +1,27 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// A custom painter that draws a premium organic gooey liquid transition.
+///
+/// It generates multi-frequency wave shapes across five distance-staggered
+/// expansion centers based on distance from the top-left menu toggle button.
 class FluidMenuPainter extends CustomPainter {
+  /// The linear progress of the transition animation (from 0.0 to 1.0).
   final double progress;
+
+  /// The background color used when rendering solid transition backgrounds.
   final Color fluidColor;
+
+  /// The optional background gradient used when rendering gradient transition backgrounds.
   final Gradient? fluidGradient;
+
+  /// The button radius for the initial top-left menu trigger button.
   final double buttonRadius;
+
+  /// The easing curve used to transform the progress coordinates.
   final Curve animationCurve;
 
+  /// Creates a [FluidMenuPainter] with transition configurations.
   FluidMenuPainter({
     required this.progress,
     required this.fluidColor,
