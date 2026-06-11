@@ -13,16 +13,17 @@ class FluidSideMenu extends StatefulWidget {
   /// Optional static override for child. If null, the selected page from
   /// `menuItems` will be shown automatically.
   final Widget? child;
-  
+
   /// Optional custom builder for content.
-  final Widget Function(BuildContext context, Animation<double> animation)? contentBuilder;
+  final Widget Function(BuildContext context, Animation<double> animation)?
+  contentBuilder;
 
   /// Helper method to access the state of the closest ancestor [FluidSideMenu]
   /// from any descendant widget (e.g. to open or close the menu programmatically).
   static FluidSideMenuState? of(BuildContext context) {
     return context.findAncestorStateOfType<FluidSideMenuState>();
   }
-  
+
   /// The list of items to show in the menu, each containing a label, page, and optional icon.
   final List<FluidMenuItem> menuItems;
 
@@ -108,11 +109,12 @@ class FluidSideMenu extends StatefulWidget {
 }
 
 /// State for the [FluidSideMenu] widget that drives the transition animations.
-class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderStateMixin {
+class FluidSideMenuState extends State<FluidSideMenu>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   bool _isMenuInteractable = false;
-  
+
   // Track tapped index to play selection feedback
   int? _tappedIndex;
 
@@ -128,12 +130,10 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    
-    _animation = _controller; // Linear progress to avoid double-curving in the painter
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
+    _animation =
+        _controller; // Linear progress to avoid double-curving in the painter
 
     _controller.addListener(() {
       final interactable = _controller.value > 0.55;
@@ -189,12 +189,14 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
 
   void _handleItemTap(int index) {
     if (_tappedIndex != null) return; // Prevent double taps during animation
-    
+
     setState(() {
       _tappedIndex = index;
     });
 
-    final bool isSwapAnim = widget.selectAnimationType == FluidMenuSelectAnimationType.iconSlideSwap;
+    final bool isSwapAnim =
+        widget.selectAnimationType ==
+        FluidMenuSelectAnimationType.iconSlideSwap;
     final int delayMs = isSwapAnim ? 320 : 180;
 
     // Play feedback animation, then close menu and trigger developer callback
@@ -223,33 +225,33 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
               }
 
               // Selected page widget
-              final Widget activePage = widget.child ?? widget.menuItems[_activePageIndex].page;
+              final Widget activePage =
+                  widget.child ?? widget.menuItems[_activePageIndex].page;
 
               // Built-in exit/entry animation for content:
               // Fade out (1.0 -> 0.0) and slide left (0.0 -> -0.1) over [0.0, 0.4] interval.
-              final Animation<double> textFade = Tween<double>(begin: 1.0, end: 0.0).animate(
-                CurvedAnimation(
-                  parent: _animation,
-                  curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
-                ),
-              );
+              final Animation<double> textFade =
+                  Tween<double>(begin: 1.0, end: 0.0).animate(
+                    CurvedAnimation(
+                      parent: _animation,
+                      curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+                    ),
+                  );
 
-              final Animation<Offset> textSlide = Tween<Offset>(
-                begin: Offset.zero,
-                end: const Offset(-0.1, 0.0),
-              ).animate(
-                CurvedAnimation(
-                  parent: _animation,
-                  curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
-                ),
-              );
+              final Animation<Offset> textSlide =
+                  Tween<Offset>(
+                    begin: Offset.zero,
+                    end: const Offset(-0.1, 0.0),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _animation,
+                      curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+                    ),
+                  );
 
               return FadeTransition(
                 opacity: textFade,
-                child: SlideTransition(
-                  position: textSlide,
-                  child: activePage,
-                ),
+                child: SlideTransition(position: textSlide, child: activePage),
               );
             },
           ),
@@ -281,9 +283,7 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
         Positioned.fill(
           child: IgnorePointer(
             ignoring: !_isMenuInteractable,
-            child: RepaintBoundary(
-              child: _buildMenuContent(),
-            ),
+            child: RepaintBoundary(child: _buildMenuContent()),
           ),
         ),
 
@@ -315,11 +315,13 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
             builder: (context, child) {
               final double val = _animation.value;
               if (val <= 0.4) return const SizedBox.shrink();
-              
+
               // Map 0.4 -> 0.8 progress to 0.0 -> 1.0 visual opacity & rotation
               final double closeProgress = ((val - 0.4) / 0.45).clamp(0.0, 1.0);
               final double opacity = closeProgress;
-              final double curveVal = Curves.easeOutBack.transform(closeProgress);
+              final double curveVal = Curves.easeOutBack.transform(
+                closeProgress,
+              );
               final double rotation = (1.0 - curveVal) * math.pi / 2;
 
               return Positioned(
@@ -330,7 +332,13 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                   child: Transform.rotate(
                     angle: rotation,
                     child: IconButton(
-                      icon: widget.closeIcon ?? const Icon(Icons.close, color: Colors.white, size: 30),
+                      icon:
+                          widget.closeIcon ??
+                          const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 30,
+                          ),
                       onPressed: close,
                     ),
                   ),
@@ -371,13 +379,18 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
             final isAnySelected = _tappedIndex != null;
 
             // Resolve custom colors for this item
-            final Color resolvedIconColor = item.iconColor ?? widget.menuItemIconColor ?? Colors.white;
-            final Color resolvedTextColor = item.textColor ?? widget.menuItemTextColor ?? Colors.white;
-            final TextStyle resolvedTextStyle = (widget.menuItemTextStyle ?? const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            )).copyWith(color: resolvedTextColor);
+            final Color resolvedIconColor =
+                item.iconColor ?? widget.menuItemIconColor ?? Colors.white;
+            final Color resolvedTextColor =
+                item.textColor ?? widget.menuItemTextColor ?? Colors.white;
+            final TextStyle resolvedTextStyle =
+                (widget.menuItemTextStyle ??
+                        const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ))
+                    .copyWith(color: resolvedTextColor);
 
             // Subtle feedback physics based on selected animation type
             double itemScale = 1.0;
@@ -396,7 +409,9 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                   itemOpacity = isSelected ? 1.0 : 0.35;
                   break;
                 case FluidMenuSelectAnimationType.slideRight:
-                  itemSlideOffset = isSelected ? const Offset(0.08, 0.0) : Offset.zero;
+                  itemSlideOffset = isSelected
+                      ? const Offset(0.08, 0.0)
+                      : Offset.zero;
                   itemOpacity = isSelected ? 1.0 : 0.35;
                   break;
                 case FluidMenuSelectAnimationType.scaleDownOthers:
@@ -410,7 +425,10 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                   itemOpacity = isSelected ? 1.0 : 0.25;
                   if (isSelected) {
                     labelOpacity = 0.0;
-                    labelSlideOffset = const Offset(0.2, 0.0); // Slight right slide for text exit
+                    labelSlideOffset = const Offset(
+                      0.2,
+                      0.0,
+                    ); // Slight right slide for text exit
                     // iconSlideOffset stays Offset.zero to let layout shrinking center the icon
                   }
                   break;
@@ -459,7 +477,11 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 260),
                                 curve: Curves.easeInOutCubic,
-                                width: isSelected && widget.selectAnimationType == FluidMenuSelectAnimationType.iconSlideSwap
+                                width:
+                                    isSelected &&
+                                        widget.selectAnimationType ==
+                                            FluidMenuSelectAnimationType
+                                                .iconSlideSwap
                                     ? 0.0
                                     : widget.menuItemSpacing,
                               ),
@@ -472,15 +494,22 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                                 duration: const Duration(milliseconds: 220),
                                 curve: Curves.easeInOutCubic,
                                 child: SizedBox(
-                                  width: isSelected && widget.selectAnimationType == FluidMenuSelectAnimationType.iconSlideSwap
+                                  width:
+                                      isSelected &&
+                                          widget.selectAnimationType ==
+                                              FluidMenuSelectAnimationType
+                                                  .iconSlideSwap
                                       ? 0.0
                                       : null,
                                   child: SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     child: AnimatedSlide(
                                       offset: labelSlideOffset,
-                                      duration: const Duration(milliseconds: 260),
+                                      duration: const Duration(
+                                        milliseconds: 260,
+                                      ),
                                       curve: Curves.easeInOutCubic,
                                       child: Text(
                                         item.label,

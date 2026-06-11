@@ -58,12 +58,14 @@ class FluidMenuPainter extends CustomPainter {
     ];
 
     // Screen diagonal serves as the maximum distance for delay calculations
-    final double screenDiagonal = math.sqrt(size.width * size.width + size.height * size.height);
+    final double screenDiagonal = math.sqrt(
+      size.width * size.width + size.height * size.height,
+    );
 
     for (final center in centers) {
       // Calculate delay based on distance from the top-left origin
       final double distance = (center - revealCenter).distance;
-      
+
       // Proportional delay: furthest point starts after 32% of progress has elapsed
       final double delay = (distance / screenDiagonal) * 0.32;
 
@@ -78,7 +80,14 @@ class FluidMenuPainter extends CustomPainter {
         final bool isRevealOrigin = (center - revealCenter).distance < 2.0;
         final double startRadius = isRevealOrigin ? buttonRadius : 0.0;
 
-        _drawWavyCircle(canvas, center, startRadius, maxRadius, localProgress, shapePaint);
+        _drawWavyCircle(
+          canvas,
+          center,
+          startRadius,
+          maxRadius,
+          localProgress,
+          shapePaint,
+        );
       } else if (progress == 0.0 && (center - revealCenter).distance < 2.0) {
         canvas.drawCircle(center, buttonRadius, shapePaint);
       }
@@ -101,25 +110,29 @@ class FluidMenuPainter extends CustomPainter {
     }
 
     final double curveVal = animationCurve.transform(localProgress);
-    final double baseRadius = startRadius + (maxRadius - startRadius) * curveVal;
+    final double baseRadius =
+        startRadius + (maxRadius - startRadius) * curveVal;
 
-    final double amplitude = (baseRadius * 0.16).clamp(12.0, 50.0) * math.sin(localProgress * math.pi);
-    
+    final double amplitude =
+        (baseRadius * 0.16).clamp(12.0, 50.0) *
+        math.sin(localProgress * math.pi);
+
     final Path path = Path();
     const int pointsCount = 96;
-    
+
     for (int i = 0; i <= pointsCount; i++) {
       final double theta = (i / pointsCount) * 2 * math.pi;
-      
+
       final double wave1 = math.sin(4 * theta + localProgress * 2.5 * math.pi);
       final double wave2 = math.cos(2 * theta - localProgress * 1.8 * math.pi);
       final double wave3 = math.sin(6 * theta + localProgress * 1.2 * math.pi);
-      
-      final double r = baseRadius + amplitude * (wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2);
-      
+
+      final double r =
+          baseRadius + amplitude * (wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2);
+
       final double x = center.dx + r * math.cos(theta);
       final double y = center.dy + r * math.sin(theta);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {

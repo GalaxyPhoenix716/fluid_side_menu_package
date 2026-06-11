@@ -62,10 +62,7 @@ class FluidStaggeredMenuItem extends StatelessWidget {
     // Wrap child with the selected transition type
     switch (animationType) {
       case FluidMenuAnimationType.fade:
-        return FadeTransition(
-          opacity: itemAnimation,
-          child: child,
-        );
+        return FadeTransition(opacity: itemAnimation, child: child);
       case FluidMenuAnimationType.scale:
         return FadeTransition(
           opacity: itemAnimation,

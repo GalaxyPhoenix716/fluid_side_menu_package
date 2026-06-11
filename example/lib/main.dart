@@ -237,7 +237,7 @@ class _DemoScreenState extends State<DemoScreen> {
         ),
         const SizedBox(height: 6.0),
         DropdownButtonFormField<Curve>(
-          initialValue: _animationCurve,
+          value: _animationCurve,
           icon: const Icon(Icons.keyboard_arrow_down, size: 16),
           decoration: InputDecoration(
             isDense: true,
@@ -294,7 +294,7 @@ class _DemoScreenState extends State<DemoScreen> {
         ),
       ],
     );
- 
+
     final Widget backgroundStyleCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
