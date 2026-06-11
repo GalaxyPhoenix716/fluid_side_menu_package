@@ -1,7 +1,9 @@
 name: fluid_side_menu
-description: "A new Flutter package project."
+description: A premium, highly-customizable fluid side navigation menu with organic liquid-reveal transitions, staggered option entrance animations, and rich select feedback behaviors.
 version: 1.0.0
-homepage:
+homepage: https://github.com/GalaxyPhoenix716/fluid_side_menu_package
+repository: https://github.com/GalaxyPhoenix716/fluid_side_menu_package
+issue_tracker: https://github.com/GalaxyPhoenix716/fluid_side_menu_package/issues
 
 environment:
   sdk: ^3.12.1

@@ -6,12 +6,14 @@ class FluidMenuPainter extends CustomPainter {
   final Color fluidColor;
   final Gradient? fluidGradient;
   final double buttonRadius;
+  final Curve animationCurve;
 
   FluidMenuPainter({
     required this.progress,
     required this.fluidColor,
     this.fluidGradient,
     required this.buttonRadius,
+    required this.animationCurve,
   });
 
   @override
@@ -84,7 +86,7 @@ class FluidMenuPainter extends CustomPainter {
       return;
     }
 
-    final double curveVal = Curves.easeInOutCubic.transform(localProgress);
+    final double curveVal = animationCurve.transform(localProgress);
     final double baseRadius = startRadius + (maxRadius - startRadius) * curveVal;
 
     final double amplitude = (baseRadius * 0.16).clamp(12.0, 50.0) * math.sin(localProgress * math.pi);
@@ -134,6 +136,7 @@ class FluidMenuPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.fluidColor != fluidColor ||
         oldDelegate.fluidGradient != fluidGradient ||
-        oldDelegate.buttonRadius != buttonRadius;
+        oldDelegate.buttonRadius != buttonRadius ||
+        oldDelegate.animationCurve != animationCurve;
   }
 }

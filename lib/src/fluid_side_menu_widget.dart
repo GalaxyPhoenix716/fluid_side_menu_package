@@ -11,6 +11,12 @@ class FluidSideMenu extends StatefulWidget {
   
   /// Optional custom builder for content.
   final Widget Function(BuildContext context, Animation<double> animation)? contentBuilder;
+
+  /// Helper method to access the state of the closest ancestor [FluidSideMenu]
+  /// from any descendant widget (e.g. to open or close the menu programmatically).
+  static FluidSideMenuState? of(BuildContext context) {
+    return context.findAncestorStateOfType<FluidSideMenuState>();
+  }
   
   /// The list of items to show in the menu, each containing a label, page, and optional icon.
   final List<FluidMenuItem> menuItems;
@@ -64,6 +70,9 @@ class FluidSideMenu extends StatefulWidget {
   /// Spacing between the icon and the text label.
   final double menuItemSpacing;
 
+  /// Easing curve for the fluid transition.
+  final Curve animationCurve;
+
   const FluidSideMenu({
     super.key,
     required this.menuItems,
@@ -85,6 +94,7 @@ class FluidSideMenu extends StatefulWidget {
     this.menuItemTextColor,
     this.menuItemIconColor,
     this.menuItemSpacing = 12.0,
+    this.animationCurve = Curves.easeInOutCubic,
   });
 
   @override
@@ -248,6 +258,7 @@ class FluidSideMenuState extends State<FluidSideMenu> with SingleTickerProviderS
                       fluidColor: widget.fluidColor,
                       fluidGradient: widget.fluidGradient,
                       buttonRadius: widget.buttonRadius,
+                      animationCurve: widget.animationCurve,
                     ),
                   );
                 },

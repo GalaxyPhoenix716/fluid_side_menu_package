@@ -33,15 +33,12 @@ class DemoScreen extends StatefulWidget {
 }
 
 class _DemoScreenState extends State<DemoScreen> {
-  // Key to control the menu state (open/close)
-  final GlobalKey<FluidSideMenuState> _menuKey =
-      GlobalKey<FluidSideMenuState>();
-
   // State variables for animation configuration
   FluidMenuAnimationType _entryAnimation = FluidMenuAnimationType.slide;
   FluidMenuSelectAnimationType _selectAnimation =
       FluidMenuSelectAnimationType.scalePulse;
   bool _useGradient = true;
+  Curve _animationCurve = Curves.easeInOutCubic;
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +70,6 @@ class _DemoScreenState extends State<DemoScreen> {
 
     return Scaffold(
       body: FluidSideMenu(
-        key: _menuKey,
         fluidColor: Colors.black,
         fluidGradient: _useGradient
             ? const LinearGradient(
@@ -90,6 +86,7 @@ class _DemoScreenState extends State<DemoScreen> {
         showBuiltInButtons: true,
         menuAnimationType: _entryAnimation,
         selectAnimationType: _selectAnimation,
+        animationCurve: _animationCurve,
         menuIcon: const Icon(Icons.menu_open, size: 22),
         menuItemSpacing: 16.0,
         menuItemTextStyle: GoogleFonts.outfit(
@@ -227,6 +224,77 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final Widget curveCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Transition curve',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<Curve>(
+          initialValue: _animationCurve,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+          ),
+          style: GoogleFonts.outfit(
+            color: Colors.black,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Colors.white,
+          items: const [
+            DropdownMenuItem(
+              value: Curves.easeInOutCubic,
+              child: Text('EASE IN OUT CUBIC'),
+            ),
+            DropdownMenuItem(
+              value: Curves.decelerate,
+              child: Text('DECELERATE'),
+            ),
+            DropdownMenuItem(
+              value: Curves.bounceOut,
+              child: Text('BOUNCE OUT'),
+            ),
+            DropdownMenuItem(
+              value: Curves.elasticOut,
+              child: Text('ELASTIC OUT'),
+            ),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _animationCurve = val;
+              });
+            }
+          },
+        ),
+      ],
+    );
+ 
     final Widget backgroundStyleCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,6 +404,8 @@ class _DemoScreenState extends State<DemoScreen> {
                 Expanded(child: entryAnimationCol),
                 const SizedBox(width: 14.0),
                 Expanded(child: selectAnimationCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: curveCol),
               ],
             ),
             const SizedBox(height: 14.0),
@@ -344,6 +414,8 @@ class _DemoScreenState extends State<DemoScreen> {
             entryAnimationCol,
             const SizedBox(height: 14.0),
             selectAnimationCol,
+            const SizedBox(height: 14.0),
+            curveCol,
             const SizedBox(height: 14.0),
             backgroundStyleCol,
           ],
@@ -516,7 +588,8 @@ class ContactScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'Reach out to me at galaxyphoenix716@gmai.com',
+              'Reach out to me at \ngalaxyphoenix716@gmai.com',
+              textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 color: Colors.black38,
