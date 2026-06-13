@@ -42,6 +42,7 @@ class _DemoScreenState extends State<DemoScreen> {
   bool _enableSwipe = true;
   String _originType = 'TOP LEFT';
   bool _enableHaptic = true;
+  FluidMenuItemAlignment _itemAlignment = FluidMenuItemAlignment.center;
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +55,69 @@ class _DemoScreenState extends State<DemoScreen> {
       ),
       FluidMenuItem(
         label: 'Categories',
-        page: const CategoriesScreen(),
         icon: const Icon(Icons.category),
+        subItems: [
+          FluidMenuItem(
+            label: 'Baskets',
+            icon: const Icon(Icons.shopping_basket),
+            subItems: [
+              FluidMenuItem(
+                label: 'Woven Baskets',
+                page: const BasketsScreen(),
+                icon: const Icon(Icons.shopping_bag),
+              ),
+              FluidMenuItem(
+                label: 'Plastic Baskets',
+                page: const BasketsScreen(),
+                icon: const Icon(Icons.shopping_basket),
+                // Per-item size override: slightly larger than the sibling above
+                textStyle: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+                iconSize: 20.0,
+              ),
+            ],
+          ),
+          FluidMenuItem(
+            label: 'Gifts',
+            icon: const Icon(Icons.card_giftcard),
+            subItems: [
+              FluidMenuItem(
+                label: 'Birthday Gifts',
+                page: const GiftsScreen(),
+                icon: const Icon(Icons.cake),
+              ),
+              FluidMenuItem(
+                label: 'Anniversary Gifts',
+                page: const GiftsScreen(),
+                icon: const Icon(Icons.favorite),
+              ),
+              FluidMenuItem(
+                label: 'Holiday Gifts',
+                page: const GiftsScreen(),
+                icon: const Icon(Icons.celebration),
+              ),
+            ],
+          ),
+          FluidMenuItem(
+            label: 'Furniture',
+            icon: const Icon(Icons.chair),
+            subItems: [
+              FluidMenuItem(
+                label: 'Chairs',
+                page: const FurnitureScreen(),
+                icon: const Icon(Icons.chair_alt),
+              ),
+              FluidMenuItem(
+                label: 'Tables',
+                page: const FurnitureScreen(),
+                icon: const Icon(Icons.table_restaurant),
+              ),
+            ],
+          ),
+        ],
       ),
       FluidMenuItem(
         label: 'About',
@@ -66,8 +128,8 @@ class _DemoScreenState extends State<DemoScreen> {
         label: 'Contact us',
         page: const ContactScreen(),
         icon: const Icon(Icons.mail),
-        textColor: Colors.purpleAccent, // Custom text color for this item
-        iconColor: Colors.purpleAccent, // Custom icon color for this item
+        textColor: Colors.purpleAccent,
+        iconColor: Colors.purpleAccent,
       ),
     ];
 
@@ -102,17 +164,28 @@ class _DemoScreenState extends State<DemoScreen> {
         enableSwipeGestures: _enableSwipe,
         revealOrigin: revealOrigin,
         enableHapticFeedback: _enableHaptic,
+        itemAlignment: _itemAlignment,
         menuIcon: const Icon(Icons.menu_open, size: 22),
         menuItemSpacing: 16.0,
         menuItemTextStyle: GoogleFonts.outfit(
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
-        menuItemTextColor:
-            Colors.white70, // Package-level default item text color
-        menuItemIconColor:
-            Colors.white70, // Package-level default item icon color
+        subMenuItemTextStyle: GoogleFonts.outfit(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.5,
+        ),
+        subMenuItemIconSize: 18.0,
+        menuItemTextColor: Colors.white70,
+        menuItemIconColor: Colors.white70,
+        // Scroll is enabled by default; all items will be reachable even on
+        // small screens with many nested items open simultaneously.
+        enableScroll: true,
+        // Reduce vertical padding slightly so more items fit before scrolling
+        menuItemPadding: const EdgeInsets.symmetric(vertical: 9.0),
+        subMenuItemPadding: const EdgeInsets.only(top: 10.0),
         menuItems: items,
       ),
     );
@@ -560,6 +633,65 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final Widget alignmentCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Item alignment',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<FluidMenuItemAlignment>(
+          initialValue: _itemAlignment,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+          ),
+          style: GoogleFonts.outfit(
+            color: Colors.black,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Colors.white,
+          items: FluidMenuItemAlignment.values.map((align) {
+            return DropdownMenuItem(
+              value: align,
+              child: Text(align.name.toUpperCase()),
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _itemAlignment = val;
+              });
+            }
+          },
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       decoration: BoxDecoration(
@@ -622,7 +754,13 @@ class _DemoScreenState extends State<DemoScreen> {
               ],
             ),
             const SizedBox(height: 14.0),
-            Row(children: [Expanded(child: hapticCol)]),
+            Row(
+              children: [
+                Expanded(child: alignmentCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: hapticCol),
+              ],
+            ),
           ] else ...[
             entryAnimationCol,
             const SizedBox(height: 14.0),
@@ -635,6 +773,8 @@ class _DemoScreenState extends State<DemoScreen> {
             swipeGestureCol,
             const SizedBox(height: 14.0),
             originCol,
+            const SizedBox(height: 14.0),
+            alignmentCol,
             const SizedBox(height: 14.0),
             hapticCol,
           ],
@@ -816,6 +956,160 @@ class ContactScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class BasketsScreen extends StatelessWidget {
+  const BasketsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'BASKETS CATEGORY',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GiftsScreen extends StatelessWidget {
+  const GiftsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'GIFTS CATEGORY',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FurnitureScreen extends StatelessWidget {
+  const FurnitureScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'FURNITURE',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShopScreen extends StatelessWidget {
+  const ShopScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'SHOP',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class OrdersScreen extends StatelessWidget {
+  const OrdersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'ORDERS',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class WishlistScreen extends StatelessWidget {
+  const WishlistScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'WISHLIST',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Text(
+          'SETTINGS',
+          style: GoogleFonts.outfit(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            letterSpacing: 2.0,
+          ),
         ),
       ),
     );

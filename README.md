@@ -233,16 +233,20 @@ FluidSideMenu(
 | `edgeDragWidth`        | `double`                       | `30.0`                                    | The width of the drag zone at the left edge of the screen when the menu is closed.     |
 | `revealOrigin`         | `Offset?`                      | `null`                                    | Custom offset coordinates from which the gooey reveal wave originates (defaults to menu button). |
 | `enableHapticFeedback` | `bool`                         | `true`                                    | Whether to trigger haptic feedback at critical transitions and option taps.           |
+| `itemAlignment`        | `FluidMenuItemAlignment`       | `FluidMenuItemAlignment.center`           | The alignment of the menu items (left, center, or right) within the drawer.           |
+| `onSubItemTapped`      | `void Function(int, int)?`     | `null`                                    | Callback triggered when a nested sub-item is selected.                                |
 
 ### FluidMenuItem Options
 
-| Parameter   | Type      | Default  | Description                                           |
-| :---------- | :-------- | :------- | :---------------------------------------------------- |
-| `label`     | `String`  | Required | Label text displayed for the option.                  |
-| `page`      | `Widget`  | Required | Target page screen widget to show when tapped.        |
-| `icon`      | `Widget?` | `null`   | Prefix icon widget.                                   |
-| `textColor` | `Color?`  | `null`   | Individual custom override for the label text color.  |
-| `iconColor` | `Color?`  | `null`   | Individual custom override for the prefix icon color. |
+| Parameter   | Type                   | Default  | Description                                                                           |
+| :---------- | :--------------------- | :------- | :------------------------------------------------------------------------------------ |
+| `label`     | `String`               | Required | Label text displayed for the option.                                                  |
+| `page`      | `Widget?`              | `null`   | Optional target page screen widget to show when tapped (required for leaf items).     |
+| `icon`      | `Widget?`              | `null`   | Prefix icon widget.                                                                   |
+| `textColor` | `Color?`               | `null`   | Individual custom override for the label text color.                                  |
+| `iconColor` | `Color?`               | `null`   | Individual custom override for the prefix icon color.                                 |
+| `subItems`  | `List<FluidMenuItem>?` | `null`   | Optional list of nested child items that expand as a dropdown when the parent is tapped. |
+| `onTap`     | `VoidCallback?`        | `null`   | Optional custom callback executed when this specific menu item is tapped.             |
 
 ### Selection Feedback Animations
 

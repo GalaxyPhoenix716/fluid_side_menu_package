@@ -7,7 +7,7 @@ class FluidMenuItem {
   final String label;
 
   /// The widget/page to display on the main screen when this item is selected.
-  final Widget page;
+  final Widget? page;
 
   /// Optional prefix icon or widget to show next to the label.
   final Widget? icon;
@@ -18,13 +18,31 @@ class FluidMenuItem {
   /// Optional custom icon color for this specific menu item.
   final Color? iconColor;
 
+  /// Optional list of nested child menu items.
+  final List<FluidMenuItem>? subItems;
+
+  /// Optional custom callback triggered when this specific item is tapped.
+  final VoidCallback? onTap;
+
+  /// Optional per-item text style override. Takes precedence over [FluidSideMenu.subMenuItemTextStyle]
+  /// and [FluidSideMenu.menuItemTextStyle] for this specific item.
+  final TextStyle? textStyle;
+
+  /// Optional per-item icon size override. Takes precedence over [FluidSideMenu.subMenuItemIconSize]
+  /// for this specific item.
+  final double? iconSize;
+
   /// Creates a [FluidMenuItem] containing navigation and style properties.
   const FluidMenuItem({
     required this.label,
-    required this.page,
+    this.page,
     this.icon,
     this.textColor,
     this.iconColor,
+    this.subItems,
+    this.onTap,
+    this.textStyle,
+    this.iconSize,
   });
 }
 

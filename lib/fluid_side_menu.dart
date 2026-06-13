@@ -33,3 +33,15 @@ enum FluidMenuSelectAnimationType {
   /// Icon slides to the position of the label, and label slides out.
   iconSlideSwap,
 }
+
+/// The alignment of the menu items within the menu container.
+enum FluidMenuItemAlignment {
+  /// Align items to the left.
+  left,
+
+  /// Align items in the center.
+  center,
+
+  /// Align items to the right.
+  right,
+}

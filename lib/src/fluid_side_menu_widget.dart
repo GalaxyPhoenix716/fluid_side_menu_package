@@ -92,6 +92,44 @@ class FluidSideMenu extends StatefulWidget {
   /// Whether to enable haptic feedback at critical transitions and interactions.
   final bool enableHapticFeedback;
 
+  /// The alignment of the menu items (left, center, or right) within the drawer.
+  final FluidMenuItemAlignment itemAlignment;
+
+  /// Callback triggered when a nested sub-item is tapped.
+  final void Function(int parentIndex, int subIndex)? onSubItemTapped;
+
+  /// Custom text style for the nested sub-menu options.
+  final TextStyle? subMenuItemTextStyle;
+
+  /// Custom icon size for the nested sub-menu options.
+  final double? subMenuItemIconSize;
+
+  /// Whether the menu items column is scrollable when content overflows the screen height.
+  /// Defaults to [true] so long item lists are always reachable.
+  final bool enableScroll;
+
+  /// Scroll physics for the menu item list.
+  /// If null the default platform [ClampingScrollPhysics] is used.
+  final ScrollPhysics? scrollPhysics;
+
+  /// An optional [ScrollController] for the menu item list.
+  final ScrollController? scrollController;
+
+  /// Whether nested child items should be scaled down automatically based on
+  /// their depth level. When [false] every depth level uses the same text and
+  /// icon size, which is useful when per-item sizes are set directly on
+  /// [FluidMenuItem.textStyle] / [FluidMenuItem.iconSize].
+  /// Defaults to [true].
+  final bool scaleChildItemsBasedOnDepth;
+
+  /// Vertical padding around each top-level menu item.
+  /// Defaults to `EdgeInsets.symmetric(vertical: 12.0)`.
+  final EdgeInsets? menuItemPadding;
+
+  /// Vertical padding above each nested (child) menu item.
+  /// Defaults to `EdgeInsets.only(top: 12.0)`.
+  final EdgeInsets? subMenuItemPadding;
+
   /// Creates a [FluidSideMenu] navigation drawer with transition properties.
   const FluidSideMenu({
     super.key,
@@ -119,6 +157,16 @@ class FluidSideMenu extends StatefulWidget {
     this.edgeDragWidth = 30.0,
     this.revealOrigin,
     this.enableHapticFeedback = true,
+    this.itemAlignment = FluidMenuItemAlignment.center,
+    this.onSubItemTapped,
+    this.subMenuItemTextStyle,
+    this.subMenuItemIconSize,
+    this.enableScroll = true,
+    this.scrollPhysics,
+    this.scrollController,
+    this.scaleChildItemsBasedOnDepth = true,
+    this.menuItemPadding,
+    this.subMenuItemPadding,
   });
 
   @override
@@ -132,11 +180,14 @@ class FluidSideMenuState extends State<FluidSideMenu>
   late Animation<double> _animation;
   bool _isMenuInteractable = false;
 
-  // Track tapped index to play selection feedback
-  int? _tappedIndex;
+  // Track tapped path to play selection feedback
+  List<int>? _tappedItemPath;
 
-  // Track currently active page index
-  int _activePageIndex = 0;
+  // Track currently active page path
+  List<int> _activeItemPath = [0];
+
+  // Track expanded dropdown parent paths
+  final Set<String> _expandedPaths = {};
 
   bool _isDragging = false;
 
@@ -167,7 +218,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
       if (status == AnimationStatus.dismissed) {
         // Reset selection feedback when menu is completely closed
         setState(() {
-          _tappedIndex = null;
+          _tappedItemPath = null;
         });
       }
     });
@@ -189,7 +240,8 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
   /// Open the fluid menu programmatically
   void open({bool triggerHaptic = true}) {
-    if (_controller.value == 1.0 || _controller.status == AnimationStatus.forward) {
+    if (_controller.value == 1.0 ||
+        _controller.status == AnimationStatus.forward) {
       return;
     }
     _controller.forward();
@@ -200,7 +252,8 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
   /// Close the fluid menu programmatically
   void close({bool triggerHaptic = true}) {
-    if (_controller.value == 0.0 || _controller.status == AnimationStatus.reverse) {
+    if (_controller.value == 0.0 ||
+        _controller.status == AnimationStatus.reverse) {
       return;
     }
     _controller.reverse();
@@ -278,15 +331,15 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
-  void _handleItemTap(int index) {
-    if (_tappedIndex != null) return; // Prevent double taps during animation
+  void _handlePathTap(List<int> path) {
+    if (_tappedItemPath != null) return; // Prevent double taps during animation
 
     if (widget.enableHapticFeedback) {
       HapticFeedback.selectionClick();
     }
 
     setState(() {
-      _tappedIndex = index;
+      _tappedItemPath = path;
     });
 
     final bool isSwapAnim =
@@ -298,10 +351,13 @@ class FluidSideMenuState extends State<FluidSideMenu>
     Future.delayed(Duration(milliseconds: delayMs), () {
       if (mounted) {
         setState(() {
-          _activePageIndex = index;
+          _activeItemPath = List.from(path);
         });
         close(triggerHaptic: false);
-        widget.onItemTapped?.call(index);
+        if (path.length > 1) {
+          widget.onSubItemTapped?.call(path[0], path[1]);
+        }
+        widget.onItemTapped?.call(path[0]);
       }
     });
   }
@@ -329,8 +385,20 @@ class FluidSideMenuState extends State<FluidSideMenu>
                 }
 
                 // Selected page widget
-                final Widget activePage =
-                    widget.child ?? widget.menuItems[_activePageIndex].page;
+                final Widget activePage;
+                if (widget.child != null) {
+                  activePage = widget.child!;
+                } else {
+                  FluidMenuItem resolvedItem =
+                      widget.menuItems[_activeItemPath[0]];
+                  for (int i = 1; i < _activeItemPath.length; i++) {
+                    if (resolvedItem.subItems != null &&
+                        _activeItemPath[i] < resolvedItem.subItems!.length) {
+                      resolvedItem = resolvedItem.subItems![_activeItemPath[i]];
+                    }
+                  }
+                  activePage = resolvedItem.page ?? const SizedBox.shrink();
+                }
 
                 // Built-in exit/entry animation for content:
                 // Fade out (1.0 -> 0.0) and slide left (0.0 -> -0.1) over [0.0, 0.4] interval.
@@ -468,193 +536,405 @@ class FluidSideMenuState extends State<FluidSideMenu>
     final hasHeader = widget.menuHeader != null;
     final hasFooter = widget.menuFooter != null;
 
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Optional Header (Index 0)
-          if (hasHeader) ...[
-            FluidStaggeredMenuItem(
-              index: 0,
-              animation: _animation,
-              animationType: widget.menuAnimationType,
-              child: widget.menuHeader!,
-            ),
-            const SizedBox(height: 32.0),
-          ],
+    // Determine Align properties based on widget.itemAlignment
+    Alignment align;
+    CrossAxisAlignment crossAxisAlignment;
+    EdgeInsets padding;
 
-          // Staggered Menu Items
-          ...List.generate(widget.menuItems.length, (idx) {
-            final item = widget.menuItems[idx];
-            final itemIndex = idx + (hasHeader ? 1 : 0);
-            final isSelected = _tappedIndex == idx;
-            final isAnySelected = _tappedIndex != null;
+    switch (widget.itemAlignment) {
+      case FluidMenuItemAlignment.left:
+        align = Alignment.centerLeft;
+        crossAxisAlignment = CrossAxisAlignment.start;
+        padding = const EdgeInsets.only(left: 64.0, right: 32.0);
+        break;
+      case FluidMenuItemAlignment.right:
+        align = Alignment.centerRight;
+        crossAxisAlignment = CrossAxisAlignment.end;
+        padding = const EdgeInsets.only(left: 32.0, right: 64.0);
+        break;
+      case FluidMenuItemAlignment.center:
+        align = Alignment.center;
+        crossAxisAlignment = CrossAxisAlignment.center;
+        padding = const EdgeInsets.symmetric(horizontal: 32.0);
+        break;
+    }
 
-            // Resolve custom colors for this item
-            final Color resolvedIconColor =
-                item.iconColor ?? widget.menuItemIconColor ?? Colors.white;
-            final Color resolvedTextColor =
-                item.textColor ?? widget.menuItemTextColor ?? Colors.white;
-            final TextStyle resolvedTextStyle =
-                (widget.menuItemTextStyle ??
-                        const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ))
-                    .copyWith(color: resolvedTextColor);
+    Widget buildItemRow(
+      FluidMenuItem item, {
+      required List<int> path,
+      required int itemIndex,
+      required bool isSelected,
+      required bool isAnySelected,
+      required bool isParentOfSelected,
+      required VoidCallback onTap,
+      bool isSubItem = false,
+      bool isExpanded = false,
+    }) {
+      final int depth = path.length - 1;
 
-            // Subtle feedback physics based on selected animation type
-            double itemScale = 1.0;
-            double itemOpacity = 1.0;
-            Offset itemSlideOffset = Offset.zero;
+      // ----------------------------------------------------------------
+      // Font size resolution (priority: per-item > widget-level > depth scaling)
+      // ----------------------------------------------------------------
+      double fontSize;
+      if (item.textStyle?.fontSize != null) {
+        // Per-item override always wins
+        fontSize = item.textStyle!.fontSize!;
+      } else if (isSubItem && widget.subMenuItemTextStyle?.fontSize != null) {
+        final double base = widget.subMenuItemTextStyle!.fontSize!;
+        fontSize = widget.scaleChildItemsBasedOnDepth
+            ? base * math.pow(0.8, depth - 1)
+            : base;
+      } else {
+        final double base = widget.menuItemTextStyle?.fontSize ?? 32;
+        fontSize = widget.scaleChildItemsBasedOnDepth
+            ? base * math.pow(0.72, depth)
+            : base;
+      }
 
-            // Local animations for icon swap
-            double labelOpacity = 1.0;
-            Offset labelSlideOffset = Offset.zero;
-            Offset iconSlideOffset = Offset.zero;
+      // ----------------------------------------------------------------
+      // Icon size resolution (priority: per-item > widget-level > depth scaling)
+      // ----------------------------------------------------------------
+      double iconSize;
+      if (item.iconSize != null) {
+        // Per-item override always wins
+        iconSize = item.iconSize!;
+      } else if (isSubItem && widget.subMenuItemIconSize != null) {
+        iconSize = widget.scaleChildItemsBasedOnDepth
+            ? (widget.subMenuItemIconSize! - ((depth - 1) * 3.0)).clamp(
+                10.0,
+                40.0,
+              )
+            : widget.subMenuItemIconSize!;
+      } else {
+        iconSize = widget.scaleChildItemsBasedOnDepth
+            ? (24.0 - (depth * 4.0)).clamp(14.0, 24.0)
+            : 24.0;
+      }
 
-            if (isAnySelected) {
-              switch (widget.selectAnimationType) {
-                case FluidMenuSelectAnimationType.scalePulse:
-                  itemScale = isSelected ? 1.08 : 1.0;
-                  itemOpacity = isSelected ? 1.0 : 0.35;
-                  break;
-                case FluidMenuSelectAnimationType.slideRight:
-                  itemSlideOffset = isSelected
-                      ? const Offset(0.08, 0.0)
-                      : Offset.zero;
-                  itemOpacity = isSelected ? 1.0 : 0.35;
-                  break;
-                case FluidMenuSelectAnimationType.scaleDownOthers:
-                  itemScale = isSelected ? 1.0 : 0.9;
-                  itemOpacity = isSelected ? 1.0 : 0.35;
-                  break;
-                case FluidMenuSelectAnimationType.fadeOthers:
-                  itemOpacity = isSelected ? 1.0 : 0.35;
-                  break;
-                case FluidMenuSelectAnimationType.iconSlideSwap:
-                  itemOpacity = isSelected ? 1.0 : 0.25;
-                  if (isSelected) {
-                    labelOpacity = 0.0;
-                    labelSlideOffset = const Offset(
-                      0.2,
-                      0.0,
-                    ); // Slight right slide for text exit
-                    // iconSlideOffset stays Offset.zero to let layout shrinking center the icon
-                  }
-                  break;
-                case FluidMenuSelectAnimationType.none:
-                  break;
-              }
-            }
+      final double itemSpacing = widget.menuItemSpacing * math.pow(0.75, depth);
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
-              child: FluidStaggeredMenuItem(
-                index: itemIndex,
-                animation: _animation,
-                animationType: widget.menuAnimationType,
-                child: GestureDetector(
-                  onTap: () => _handleItemTap(idx),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedSlide(
-                    offset: itemSlideOffset,
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOutCubic,
-                    child: AnimatedScale(
-                      scale: itemScale,
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOutCubic,
+      final Color resolvedIconColor =
+          item.iconColor ?? widget.menuItemIconColor ?? Colors.white;
+      final Color resolvedTextColor =
+          item.textColor ?? widget.menuItemTextColor ?? Colors.white;
+
+      // ----------------------------------------------------------------
+      // Base text style resolution (priority: per-item > sub-level > top-level)
+      // ----------------------------------------------------------------
+      final TextStyle baseStyle =
+          item.textStyle ??
+          ((isSubItem && widget.subMenuItemTextStyle != null)
+              ? widget.subMenuItemTextStyle!
+              : (widget.menuItemTextStyle ??
+                    const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    )));
+
+      final TextStyle resolvedTextStyle = baseStyle.copyWith(
+        color: resolvedTextColor,
+        fontSize: fontSize,
+      );
+
+      double itemScale = 1.0;
+      double itemOpacity = 1.0;
+      Offset itemSlideOffset = Offset.zero;
+
+      double labelOpacity = 1.0;
+      Offset labelSlideOffset = Offset.zero;
+      Offset iconSlideOffset = Offset.zero;
+
+      if (isAnySelected) {
+        if (isSelected) {
+          itemOpacity = 1.0;
+          itemScale =
+              widget.selectAnimationType ==
+                  FluidMenuSelectAnimationType.scalePulse
+              ? 1.08
+              : 1.0;
+          itemSlideOffset =
+              widget.selectAnimationType ==
+                  FluidMenuSelectAnimationType.slideRight
+              ? const Offset(0.08, 0.0)
+              : Offset.zero;
+          if (widget.selectAnimationType ==
+              FluidMenuSelectAnimationType.iconSlideSwap) {
+            labelOpacity = 0.0;
+            labelSlideOffset = const Offset(0.2, 0.0);
+          }
+        } else if (isParentOfSelected) {
+          itemOpacity = 0.6;
+          itemScale = 1.0;
+        } else {
+          itemOpacity = isSubItem ? 0.35 : 0.45;
+          itemScale =
+              widget.selectAnimationType ==
+                  FluidMenuSelectAnimationType.scaleDownOthers
+              ? 0.9
+              : 1.0;
+        }
+      }
+
+      final double indentLeft =
+          (widget.itemAlignment == FluidMenuItemAlignment.left)
+          ? depth * 24.0
+          : 0.0;
+      final double indentRight =
+          (widget.itemAlignment == FluidMenuItemAlignment.right)
+          ? depth * 24.0
+          : 0.0;
+
+      return Padding(
+        padding: EdgeInsets.only(left: indentLeft, right: indentRight),
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedSlide(
+            offset: itemSlideOffset,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            child: AnimatedScale(
+              scale: itemScale,
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: itemOpacity,
+                duration: const Duration(milliseconds: 160),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (item.icon != null) ...[
+                      AnimatedSlide(
+                        offset: iconSlideOffset,
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeInOutCubic,
+                        child: IconTheme(
+                          data: IconThemeData(
+                            color: resolvedIconColor,
+                            size: iconSize,
+                          ),
+                          child: item.icon!,
+                        ),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeInOutCubic,
+                        width:
+                            isSelected &&
+                                widget.selectAnimationType ==
+                                    FluidMenuSelectAnimationType.iconSlideSwap
+                            ? 0.0
+                            : itemSpacing,
+                      ),
+                    ],
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeInOutCubic,
                       child: AnimatedOpacity(
-                        opacity: itemOpacity,
-                        duration: const Duration(milliseconds: 160),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            if (widget.menuItems[idx].icon != null) ...[
-                              AnimatedSlide(
-                                offset: iconSlideOffset,
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeInOutCubic,
-                                child: IconTheme(
-                                  data: IconThemeData(
-                                    color: resolvedIconColor,
-                                    size: 24,
-                                  ),
-                                  child: item.icon!,
-                                ),
-                              ),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeInOutCubic,
-                                width:
-                                    isSelected &&
-                                        widget.selectAnimationType ==
-                                            FluidMenuSelectAnimationType
-                                                .iconSlideSwap
-                                    ? 0.0
-                                    : widget.menuItemSpacing,
-                              ),
-                            ],
-                            AnimatedSize(
+                        opacity: labelOpacity,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeInOutCubic,
+                        child: SizedBox(
+                          width:
+                              isSelected &&
+                                  widget.selectAnimationType ==
+                                      FluidMenuSelectAnimationType.iconSlideSwap
+                              ? 0.0
+                              : null,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: AnimatedSlide(
+                              offset: labelSlideOffset,
                               duration: const Duration(milliseconds: 260),
                               curve: Curves.easeInOutCubic,
-                              child: AnimatedOpacity(
-                                opacity: labelOpacity,
-                                duration: const Duration(milliseconds: 220),
-                                curve: Curves.easeInOutCubic,
-                                child: SizedBox(
-                                  width:
-                                      isSelected &&
-                                          widget.selectAnimationType ==
-                                              FluidMenuSelectAnimationType
-                                                  .iconSlideSwap
-                                      ? 0.0
-                                      : null,
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    child: AnimatedSlide(
-                                      offset: labelSlideOffset,
-                                      duration: const Duration(
-                                        milliseconds: 260,
-                                      ),
-                                      curve: Curves.easeInOutCubic,
-                                      child: Text(
-                                        item.label,
-                                        maxLines: 1,
-                                        style: resolvedTextStyle,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                              child: Text(
+                                item.label,
+                                maxLines: 1,
+                                style: resolvedTextStyle,
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    if (item.subItems != null && item.subItems!.isNotEmpty) ...[
+                      const SizedBox(width: 8.0),
+                      AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Opacity(
+                          opacity: 0.7,
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: iconSize - 2,
+                            color: resolvedIconColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            );
-          }),
+            ),
+          ),
+        ),
+      );
+    }
 
-          // Optional Footer
-          if (hasFooter) ...[
-            const SizedBox(height: 32.0),
-            FluidStaggeredMenuItem(
-              index: widget.menuItems.length + (hasHeader ? 2 : 1),
+    Widget buildMenuItemNode(
+      FluidMenuItem item, {
+      required List<int> path,
+      required int itemIndex,
+    }) {
+      final hasSubItems = item.subItems != null && item.subItems!.isNotEmpty;
+      final pathKey = path.join(',');
+      final isExpanded = _expandedPaths.contains(pathKey);
+      final isAnySelected = _tappedItemPath != null;
+
+      bool isSelected = false;
+      bool isParentOfSelected = false;
+      if (isAnySelected) {
+        if (_tappedItemPath!.length == path.length) {
+          isSelected = true;
+          for (int i = 0; i < path.length; i++) {
+            if (_tappedItemPath![i] != path[i]) {
+              isSelected = false;
+              break;
+            }
+          }
+        } else if (_tappedItemPath!.length > path.length) {
+          isParentOfSelected = true;
+          for (int i = 0; i < path.length; i++) {
+            if (_tappedItemPath![i] != path[i]) {
+              isParentOfSelected = false;
+              break;
+            }
+          }
+        }
+      }
+
+      final Widget rowWidget = buildItemRow(
+        item,
+        path: path,
+        itemIndex: itemIndex,
+        isSelected: isSelected,
+        isAnySelected: isAnySelected,
+        isParentOfSelected: isParentOfSelected,
+        isSubItem: path.length > 1,
+        isExpanded: isExpanded,
+        onTap: () {
+          if (item.onTap != null) {
+            item.onTap!();
+          }
+          if (hasSubItems) {
+            setState(() {
+              if (_expandedPaths.contains(pathKey)) {
+                _expandedPaths.remove(pathKey);
+              } else {
+                _expandedPaths.add(pathKey);
+              }
+            });
+          } else {
+            _handlePathTap(path);
+          }
+        },
+      );
+
+      if (!hasSubItems) {
+        return rowWidget;
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: crossAxisAlignment,
+        children: [
+          rowWidget,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOutCubic,
+            child: isExpanded
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: crossAxisAlignment,
+                    children: List.generate(item.subItems!.length, (subIdx) {
+                      final subItem = item.subItems![subIdx];
+                      return Padding(
+                        padding:
+                            widget.subMenuItemPadding ??
+                            const EdgeInsets.only(top: 12.0),
+                        child: buildMenuItemNode(
+                          subItem,
+                          path: [...path, subIdx],
+                          itemIndex: itemIndex,
+                        ),
+                      );
+                    }),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      );
+    }
+
+    final Widget itemsColumn = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: crossAxisAlignment,
+      children: [
+        // Optional Header (Index 0)
+        if (hasHeader) ...[
+          FluidStaggeredMenuItem(
+            index: 0,
+            animation: _animation,
+            animationType: widget.menuAnimationType,
+            child: widget.menuHeader!,
+          ),
+          const SizedBox(height: 32.0),
+        ],
+
+        // Staggered Menu Items
+        ...List.generate(widget.menuItems.length, (idx) {
+          final item = widget.menuItems[idx];
+          final itemIndex = idx + (hasHeader ? 1 : 0);
+
+          return Padding(
+            padding:
+                widget.menuItemPadding ??
+                const EdgeInsets.symmetric(vertical: 12.0),
+            child: FluidStaggeredMenuItem(
+              index: itemIndex,
               animation: _animation,
               animationType: widget.menuAnimationType,
-              child: widget.menuFooter!,
+              child: buildMenuItemNode(item, path: [idx], itemIndex: idx),
             ),
-          ],
+          );
+        }),
+
+        // Optional Footer
+        if (hasFooter) ...[
+          const SizedBox(height: 32.0),
+          FluidStaggeredMenuItem(
+            index: widget.menuItems.length + (hasHeader ? 2 : 1),
+            animation: _animation,
+            animationType: widget.menuAnimationType,
+            child: widget.menuFooter!,
+          ),
         ],
+      ],
+    );
+
+    return Align(
+      alignment: align,
+      child: Padding(
+        padding: padding,
+        child: widget.enableScroll
+            ? SingleChildScrollView(
+                controller: widget.scrollController,
+                physics: widget.scrollPhysics ?? const ClampingScrollPhysics(),
+                child: itemsColumn,
+              )
+            : itemsColumn,
       ),
     );
   }
