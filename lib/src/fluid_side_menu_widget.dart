@@ -79,6 +79,12 @@ class FluidSideMenu extends StatefulWidget {
   /// Easing curve for the fluid transition.
   final Curve animationCurve;
 
+  /// Whether to enable swipe gestures to open or close the menu.
+  final bool enableSwipeGestures;
+
+  /// The width of the drag zone at the left edge of the screen when the menu is closed.
+  final double edgeDragWidth;
+
   /// Creates a [FluidSideMenu] navigation drawer with transition properties.
   const FluidSideMenu({
     super.key,
@@ -102,6 +108,8 @@ class FluidSideMenu extends StatefulWidget {
     this.menuItemIconColor,
     this.menuItemSpacing = 12.0,
     this.animationCurve = Curves.easeInOutCubic,
+    this.enableSwipeGestures = true,
+    this.edgeDragWidth = 30.0,
   });
 
   @override
@@ -120,6 +128,8 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
   // Track currently active page index
   int _activePageIndex = 0;
+
+  bool _isDragging = false;
 
   /// Returns whether the side navigation drawer is currently open.
   bool get isMenuOpen => _controller.value > 0.5;
@@ -187,6 +197,56 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
+  void _handleDragStart(DragStartDetails details) {
+    if (!widget.enableSwipeGestures) return;
+    final bool isClosed = _controller.value == 0.0;
+    if (isClosed) {
+      if (details.globalPosition.dx < widget.edgeDragWidth) {
+        setState(() {
+          _isDragging = true;
+        });
+      }
+    } else {
+      setState(() {
+        _isDragging = true;
+      });
+    }
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!_isDragging) return;
+    final double width = MediaQuery.of(context).size.width;
+    if (width <= 0) return;
+    final double delta = details.primaryDelta ?? 0.0;
+    _controller.value = (_controller.value + delta / width).clamp(0.0, 1.0);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (!_isDragging) return;
+    setState(() {
+      _isDragging = false;
+    });
+
+    final double width = MediaQuery.of(context).size.width;
+    if (width <= 0) return;
+
+    final double velocity = details.primaryVelocity ?? 0.0;
+    if (velocity.abs() > 365.0) {
+      if (velocity > 0) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+      return;
+    }
+
+    if (_controller.value > 0.5) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
   void _handleItemTap(int index) {
     if (_tappedIndex != null) return; // Prevent double taps during animation
 
@@ -213,8 +273,13 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
+    return GestureDetector(
+      onHorizontalDragStart: widget.enableSwipeGestures ? _handleDragStart : null,
+      onHorizontalDragUpdate: widget.enableSwipeGestures ? _handleDragUpdate : null,
+      onHorizontalDragEnd: widget.enableSwipeGestures ? _handleDragEnd : null,
+      behavior: HitTestBehavior.translucent,
+      child: Stack(
+        children: [
         // 1. Content layer (wrapped in RepaintBoundary for 60/120fps performance)
         RepaintBoundary(
           child: AnimatedBuilder(
@@ -348,8 +413,9 @@ class FluidSideMenuState extends State<FluidSideMenu>
           ),
         ],
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMenuContent() {
     final hasHeader = widget.menuHeader != null;
