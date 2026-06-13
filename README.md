@@ -7,6 +7,8 @@
 
 A premium, highly-customizable fluid side navigation drawer for Flutter. Features an organic, gooey liquid-reveal transition using high-performance custom vector splines, staggered entrance animations, nested dropdown navigation, tactile haptic feedback, edge swipe gestures, and rich selection feedback behaviors.
 
+![Fluid Side Menu demo](assets/fluid_side_menu_demo.gif)
+
 ---
 
 ## Table of Contents
