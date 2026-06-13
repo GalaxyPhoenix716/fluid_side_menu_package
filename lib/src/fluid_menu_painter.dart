@@ -21,6 +21,9 @@ class FluidMenuPainter extends CustomPainter {
   /// The easing curve used to transform the progress coordinates.
   final Curve animationCurve;
 
+  /// The center point from which the fluid wave reveal transition originates.
+  final Offset revealCenter;
+
   /// Creates a [FluidMenuPainter] with transition configurations.
   FluidMenuPainter({
     required this.progress,
@@ -28,14 +31,12 @@ class FluidMenuPainter extends CustomPainter {
     this.fluidGradient,
     required this.buttonRadius,
     required this.animationCurve,
+    required this.revealCenter,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (progress <= 0.0) return;
-
-    // The reveal center is hardcoded to the top-left menu button center (X: 44.0, Y: 64.0)
-    final Offset revealCenter = const Offset(44.0, 64.0);
 
     // Setup paint with gradient/color
     final Rect bounds = Offset.zero & size;
@@ -48,13 +49,13 @@ class FluidMenuPainter extends CustomPainter {
     shapePaint.style = PaintingStyle.fill;
     shapePaint.isAntiAlias = true;
 
-    // Define all 5 expansion centers: 4 corners + center of the screen
+    // Define all 5 expansion centers dynamically mirrored relative to revealCenter
     final List<Offset> centers = [
-      const Offset(44.0, 64.0), // Top Left
-      Offset(size.width - 44.0, 64.0), // Top Right
-      Offset(44.0, size.height - 64.0), // Bottom Left
-      Offset(size.width - 44.0, size.height - 64.0), // Bottom Right
-      Offset(size.width / 2, size.height / 2), // Center
+      revealCenter, // Dynamic Start Point
+      Offset(size.width - revealCenter.dx, revealCenter.dy),
+      Offset(revealCenter.dx, size.height - revealCenter.dy),
+      Offset(size.width - revealCenter.dx, size.height - revealCenter.dy),
+      Offset(size.width / 2, size.height / 2),
     ];
 
     // Screen diagonal serves as the maximum distance for delay calculations
@@ -164,6 +165,7 @@ class FluidMenuPainter extends CustomPainter {
         oldDelegate.fluidColor != fluidColor ||
         oldDelegate.fluidGradient != fluidGradient ||
         oldDelegate.buttonRadius != buttonRadius ||
-        oldDelegate.animationCurve != animationCurve;
+        oldDelegate.animationCurve != animationCurve ||
+        oldDelegate.revealCenter != revealCenter;
   }
 }

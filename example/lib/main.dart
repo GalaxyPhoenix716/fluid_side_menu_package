@@ -40,6 +40,7 @@ class _DemoScreenState extends State<DemoScreen> {
   bool _useGradient = true;
   Curve _animationCurve = Curves.easeInOutCubic;
   bool _enableSwipe = true;
+  String _originType = 'TOP LEFT';
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +65,19 @@ class _DemoScreenState extends State<DemoScreen> {
         label: 'Contact us',
         page: const ContactScreen(),
         icon: const Icon(Icons.mail),
-        textColor: Colors.orangeAccent, // Custom text color for this item
-        iconColor: Colors.orangeAccent, // Custom icon color for this item
+        textColor: Colors.purpleAccent, // Custom text color for this item
+        iconColor: Colors.purpleAccent, // Custom icon color for this item
       ),
     ];
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    Offset? revealOrigin;
+    if (_originType == 'BOTTOM CENTER') {
+      revealOrigin = Offset(screenWidth / 2, screenHeight - 40.0);
+    } else if (_originType == 'CENTER') {
+      revealOrigin = Offset(screenWidth / 2, screenHeight / 2);
+    }
 
     return Scaffold(
       body: FluidSideMenu(
@@ -89,6 +99,7 @@ class _DemoScreenState extends State<DemoScreen> {
         selectAnimationType: _selectAnimation,
         animationCurve: _animationCurve,
         enableSwipeGestures: _enableSwipe,
+        revealOrigin: revealOrigin,
         menuIcon: const Icon(Icons.menu_open, size: 22),
         menuItemSpacing: 16.0,
         menuItemTextStyle: GoogleFonts.outfit(
@@ -421,6 +432,70 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final Widget originCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Wave origin',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<String>(
+          initialValue: _originType,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+          ),
+          style: GoogleFonts.outfit(
+            color: Colors.black,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Colors.white,
+          items: const [
+            DropdownMenuItem(
+              value: 'TOP LEFT',
+              child: Text('TOP LEFT (DEFAULT)'),
+            ),
+            DropdownMenuItem(value: 'CENTER', child: Text('CENTER')),
+            DropdownMenuItem(
+              value: 'BOTTOM CENTER',
+              child: Text('BOTTOM CENTER'),
+            ),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _originType = val;
+              });
+            }
+          },
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       decoration: BoxDecoration(
@@ -478,6 +553,8 @@ class _DemoScreenState extends State<DemoScreen> {
                 Expanded(child: backgroundStyleCol),
                 const SizedBox(width: 14.0),
                 Expanded(child: swipeGestureCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: originCol),
               ],
             ),
           ] else ...[
@@ -490,6 +567,8 @@ class _DemoScreenState extends State<DemoScreen> {
             backgroundStyleCol,
             const SizedBox(height: 14.0),
             swipeGestureCol,
+            const SizedBox(height: 14.0),
+            originCol,
           ],
         ],
       ),

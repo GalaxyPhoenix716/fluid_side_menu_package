@@ -85,6 +85,9 @@ class FluidSideMenu extends StatefulWidget {
   /// The width of the drag zone at the left edge of the screen when the menu is closed.
   final double edgeDragWidth;
 
+  /// The custom center offset point from which the fluid wave reveal transition originates.
+  final Offset? revealOrigin;
+
   /// Creates a [FluidSideMenu] navigation drawer with transition properties.
   const FluidSideMenu({
     super.key,
@@ -110,6 +113,7 @@ class FluidSideMenu extends StatefulWidget {
     this.animationCurve = Curves.easeInOutCubic,
     this.enableSwipeGestures = true,
     this.edgeDragWidth = 30.0,
+    this.revealOrigin,
   });
 
   @override
@@ -274,148 +278,160 @@ class FluidSideMenuState extends State<FluidSideMenu>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onHorizontalDragStart: widget.enableSwipeGestures ? _handleDragStart : null,
-      onHorizontalDragUpdate: widget.enableSwipeGestures ? _handleDragUpdate : null,
+      onHorizontalDragStart: widget.enableSwipeGestures
+          ? _handleDragStart
+          : null,
+      onHorizontalDragUpdate: widget.enableSwipeGestures
+          ? _handleDragUpdate
+          : null,
       onHorizontalDragEnd: widget.enableSwipeGestures ? _handleDragEnd : null,
       behavior: HitTestBehavior.translucent,
       child: Stack(
         children: [
-        // 1. Content layer (wrapped in RepaintBoundary for 60/120fps performance)
-        RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _animation,
-            builder: (context, _) {
-              if (widget.contentBuilder != null) {
-                return widget.contentBuilder!(context, _animation);
-              }
+          // 1. Content layer (wrapped in RepaintBoundary for 60/120fps performance)
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, _) {
+                if (widget.contentBuilder != null) {
+                  return widget.contentBuilder!(context, _animation);
+                }
 
-              // Selected page widget
-              final Widget activePage =
-                  widget.child ?? widget.menuItems[_activePageIndex].page;
+                // Selected page widget
+                final Widget activePage =
+                    widget.child ?? widget.menuItems[_activePageIndex].page;
 
-              // Built-in exit/entry animation for content:
-              // Fade out (1.0 -> 0.0) and slide left (0.0 -> -0.1) over [0.0, 0.4] interval.
-              final Animation<double> textFade =
-                  Tween<double>(begin: 1.0, end: 0.0).animate(
-                    CurvedAnimation(
-                      parent: _animation,
-                      curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
-                    ),
-                  );
+                // Built-in exit/entry animation for content:
+                // Fade out (1.0 -> 0.0) and slide left (0.0 -> -0.1) over [0.0, 0.4] interval.
+                final Animation<double> textFade =
+                    Tween<double>(begin: 1.0, end: 0.0).animate(
+                      CurvedAnimation(
+                        parent: _animation,
+                        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+                      ),
+                    );
 
-              final Animation<Offset> textSlide =
-                  Tween<Offset>(
-                    begin: Offset.zero,
-                    end: const Offset(-0.1, 0.0),
-                  ).animate(
-                    CurvedAnimation(
-                      parent: _animation,
-                      curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
-                    ),
-                  );
+                final Animation<Offset> textSlide =
+                    Tween<Offset>(
+                      begin: Offset.zero,
+                      end: const Offset(-0.1, 0.0),
+                    ).animate(
+                      CurvedAnimation(
+                        parent: _animation,
+                        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+                      ),
+                    );
 
-              return FadeTransition(
-                opacity: textFade,
-                child: SlideTransition(position: textSlide, child: activePage),
-              );
-            },
+                return FadeTransition(
+                  opacity: textFade,
+                  child: SlideTransition(
+                    position: textSlide,
+                    child: activePage,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
 
-        // 2. Custom Painter Layer (fluid transition)
-        Positioned.fill(
-          child: IgnorePointer(
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: FluidMenuPainter(
-                      progress: _animation.value,
-                      fluidColor: widget.fluidColor,
-                      fluidGradient: widget.fluidGradient,
-                      buttonRadius: widget.buttonRadius,
-                      animationCurve: widget.animationCurve,
-                    ),
-                  );
-                },
+          // 2. Custom Painter Layer (fluid transition)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _animation,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      painter: FluidMenuPainter(
+                        progress: _animation.value,
+                        fluidColor: widget.fluidColor,
+                        fluidGradient: widget.fluidGradient,
+                        buttonRadius: widget.buttonRadius,
+                        animationCurve: widget.animationCurve,
+                        revealCenter:
+                            widget.revealOrigin ?? const Offset(44.0, 64.0),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
 
-        // 3. Menu overlay layer
-        Positioned.fill(
-          child: IgnorePointer(
-            ignoring: !_isMenuInteractable,
-            child: RepaintBoundary(child: _buildMenuContent()),
-          ),
-        ),
-
-        // 4. Built-in toggle buttons
-        if (widget.showBuiltInButtons) ...[
-          // Menu button (visible only when transition has not started)
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              if (_controller.value > 0.0) return const SizedBox.shrink();
-              return Positioned(
-                top: 40.0,
-                left: 20.0,
-                child: FloatingActionButton.small(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  elevation: 2.0,
-                  shape: const CircleBorder(),
-                  onPressed: open,
-                  child: widget.menuIcon ?? const Icon(Icons.menu),
-                ),
-              );
-            },
+          // 3. Menu overlay layer
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_isMenuInteractable,
+              child: RepaintBoundary(child: _buildMenuContent()),
+            ),
           ),
 
-          // Close button (rotates and fades in during expansion, synced with fluid front)
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              final double val = _animation.value;
-              if (val <= 0.4) return const SizedBox.shrink();
+          // 4. Built-in toggle buttons
+          if (widget.showBuiltInButtons) ...[
+            // Menu button (visible only when transition has not started)
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                if (_controller.value > 0.0) return const SizedBox.shrink();
+                return Positioned(
+                  top: 40.0,
+                  left: 20.0,
+                  child: FloatingActionButton.small(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    elevation: 2.0,
+                    shape: const CircleBorder(),
+                    onPressed: open,
+                    child: widget.menuIcon ?? const Icon(Icons.menu),
+                  ),
+                );
+              },
+            ),
 
-              // Map 0.4 -> 0.8 progress to 0.0 -> 1.0 visual opacity & rotation
-              final double closeProgress = ((val - 0.4) / 0.45).clamp(0.0, 1.0);
-              final double opacity = closeProgress;
-              final double curveVal = Curves.easeOutBack.transform(
-                closeProgress,
-              );
-              final double rotation = (1.0 - curveVal) * math.pi / 2;
+            // Close button (rotates and fades in during expansion, synced with fluid front)
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                final double val = _animation.value;
+                if (val <= 0.4) return const SizedBox.shrink();
 
-              return Positioned(
-                top: 40.0,
-                right: 20.0,
-                child: Opacity(
-                  opacity: opacity,
-                  child: Transform.rotate(
-                    angle: rotation,
-                    child: IconButton(
-                      icon:
-                          widget.closeIcon ??
-                          const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                      onPressed: close,
+                // Map 0.4 -> 0.8 progress to 0.0 -> 1.0 visual opacity & rotation
+                final double closeProgress = ((val - 0.4) / 0.45).clamp(
+                  0.0,
+                  1.0,
+                );
+                final double opacity = closeProgress;
+                final double curveVal = Curves.easeOutBack.transform(
+                  closeProgress,
+                );
+                final double rotation = (1.0 - curveVal) * math.pi / 2;
+
+                return Positioned(
+                  top: 40.0,
+                  right: 20.0,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Transform.rotate(
+                      angle: rotation,
+                      child: IconButton(
+                        icon:
+                            widget.closeIcon ??
+                            const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                        onPressed: close,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
+          ],
         ],
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
   Widget _buildMenuContent() {
     final hasHeader = widget.menuHeader != null;
