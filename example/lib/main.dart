@@ -41,6 +41,7 @@ class _DemoScreenState extends State<DemoScreen> {
   Curve _animationCurve = Curves.easeInOutCubic;
   bool _enableSwipe = true;
   String _originType = 'TOP LEFT';
+  bool _enableHaptic = true;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +101,7 @@ class _DemoScreenState extends State<DemoScreen> {
         animationCurve: _animationCurve,
         enableSwipeGestures: _enableSwipe,
         revealOrigin: revealOrigin,
+        enableHapticFeedback: _enableHaptic,
         menuIcon: const Icon(Icons.menu_open, size: 22),
         menuItemSpacing: 16.0,
         menuItemTextStyle: GoogleFonts.outfit(
@@ -496,6 +498,68 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final Widget hapticCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Haptic feedback',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _enableHaptic = true),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: _enableHaptic ? Colors.black : Colors.white,
+                  foregroundColor: _enableHaptic ? Colors.white : Colors.black,
+                  side: BorderSide(color: Colors.grey.shade200),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                ),
+                child: Text(
+                  'ENABLED',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _enableHaptic = false),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: !_enableHaptic ? Colors.black : Colors.white,
+                  foregroundColor: !_enableHaptic ? Colors.white : Colors.black,
+                  side: BorderSide(color: Colors.grey.shade200),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                ),
+                child: Text(
+                  'DISABLED',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       decoration: BoxDecoration(
@@ -557,6 +621,8 @@ class _DemoScreenState extends State<DemoScreen> {
                 Expanded(child: originCol),
               ],
             ),
+            const SizedBox(height: 14.0),
+            Row(children: [Expanded(child: hapticCol)]),
           ] else ...[
             entryAnimationCol,
             const SizedBox(height: 14.0),
@@ -569,6 +635,8 @@ class _DemoScreenState extends State<DemoScreen> {
             swipeGestureCol,
             const SizedBox(height: 14.0),
             originCol,
+            const SizedBox(height: 14.0),
+            hapticCol,
           ],
         ],
       ),

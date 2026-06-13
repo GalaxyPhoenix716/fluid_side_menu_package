@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../fluid_side_menu.dart';
 import 'fluid_menu_painter.dart';
 import 'fluid_menu_item.dart';
@@ -88,6 +89,9 @@ class FluidSideMenu extends StatefulWidget {
   /// The custom center offset point from which the fluid wave reveal transition originates.
   final Offset? revealOrigin;
 
+  /// Whether to enable haptic feedback at critical transitions and interactions.
+  final bool enableHapticFeedback;
+
   /// Creates a [FluidSideMenu] navigation drawer with transition properties.
   const FluidSideMenu({
     super.key,
@@ -114,6 +118,7 @@ class FluidSideMenu extends StatefulWidget {
     this.enableSwipeGestures = true,
     this.edgeDragWidth = 30.0,
     this.revealOrigin,
+    this.enableHapticFeedback = true,
   });
 
   @override
@@ -183,13 +188,25 @@ class FluidSideMenuState extends State<FluidSideMenu>
   }
 
   /// Open the fluid menu programmatically
-  void open() {
+  void open({bool triggerHaptic = true}) {
+    if (_controller.value == 1.0 || _controller.status == AnimationStatus.forward) {
+      return;
+    }
     _controller.forward();
+    if (triggerHaptic && widget.enableHapticFeedback) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   /// Close the fluid menu programmatically
-  void close() {
+  void close({bool triggerHaptic = true}) {
+    if (_controller.value == 0.0 || _controller.status == AnimationStatus.reverse) {
+      return;
+    }
     _controller.reverse();
+    if (triggerHaptic && widget.enableHapticFeedback) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   /// Toggle the fluid menu programmatically
@@ -203,17 +220,27 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
   void _handleDragStart(DragStartDetails details) {
     if (!widget.enableSwipeGestures) return;
+    if (_controller.isAnimating) return;
+
     final bool isClosed = _controller.value == 0.0;
     if (isClosed) {
       if (details.globalPosition.dx < widget.edgeDragWidth) {
         setState(() {
           _isDragging = true;
         });
+        if (widget.enableHapticFeedback) {
+          HapticFeedback.lightImpact();
+        }
       }
     } else {
-      setState(() {
-        _isDragging = true;
-      });
+      if (_controller.value == 1.0) {
+        setState(() {
+          _isDragging = true;
+        });
+        if (widget.enableHapticFeedback) {
+          HapticFeedback.lightImpact();
+        }
+      }
     }
   }
 
@@ -237,22 +264,26 @@ class FluidSideMenuState extends State<FluidSideMenu>
     final double velocity = details.primaryVelocity ?? 0.0;
     if (velocity.abs() > 365.0) {
       if (velocity > 0) {
-        _controller.forward();
+        open(triggerHaptic: false);
       } else {
-        _controller.reverse();
+        close(triggerHaptic: false);
       }
       return;
     }
 
     if (_controller.value > 0.5) {
-      _controller.forward();
+      open(triggerHaptic: false);
     } else {
-      _controller.reverse();
+      close(triggerHaptic: false);
     }
   }
 
   void _handleItemTap(int index) {
     if (_tappedIndex != null) return; // Prevent double taps during animation
+
+    if (widget.enableHapticFeedback) {
+      HapticFeedback.selectionClick();
+    }
 
     setState(() {
       _tappedIndex = index;
@@ -269,7 +300,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
         setState(() {
           _activePageIndex = index;
         });
-        close();
+        close(triggerHaptic: false);
         widget.onItemTapped?.call(index);
       }
     });

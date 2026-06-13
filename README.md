@@ -229,6 +229,10 @@ FluidSideMenu(
 | `menuItemTextColor`   | `Color?`                       | `null`                                    | Default text color fallback for all items (if not set in `FluidMenuItem`).            |
 | `menuItemIconColor`   | `Color?`                       | `null`                                    | Default icon color fallback for all items (if not set in `FluidMenuItem`).            |
 | `menuItemSpacing`     | `double`                       | `12.0`                                    | Spacing between option icons and text labels.                                         |
+| `enableSwipeGestures`  | `bool`                         | `true`                                    | Whether swipe gestures can be used to pull open or slide close the menu.               |
+| `edgeDragWidth`        | `double`                       | `30.0`                                    | The width of the drag zone at the left edge of the screen when the menu is closed.     |
+| `revealOrigin`         | `Offset?`                      | `null`                                    | Custom offset coordinates from which the gooey reveal wave originates (defaults to menu button). |
+| `enableHapticFeedback` | `bool`                         | `true`                                    | Whether to trigger haptic feedback at critical transitions and option taps.           |
 
 ### FluidMenuItem Options
 
