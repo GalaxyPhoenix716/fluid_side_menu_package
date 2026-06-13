@@ -1,37 +1,22 @@
-## 1.3.0
-
-* Add `enableScroll` parameter to `FluidSideMenu` (default `true`) so the menu item column automatically scrolls when content overflows the available screen height.
-* Add `scrollPhysics` parameter to supply custom `ScrollPhysics` (defaults to `ClampingScrollPhysics`).
-* Add `scrollController` parameter to expose an external `ScrollController` for programmatic scroll position control.
-* Add `scaleChildItemsBasedOnDepth` parameter (default `true`) to control whether automatic font/icon size reduction at each nesting level is active; set `false` when using explicit per-item sizes.
-* Add `menuItemPadding` parameter (`EdgeInsets?`) to override default vertical spacing around top-level menu items.
-* Add `subMenuItemPadding` parameter (`EdgeInsets?`) to override default spacing above each nested child item.
-* Add `textStyle` property to `FluidMenuItem` — a per-item `TextStyle` override with the highest resolution priority, superseding both widget-level style parameters and automatic depth scaling.
-* Add `iconSize` property to `FluidMenuItem` — a per-item icon size override with the highest resolution priority.
-* Refactor item size resolution in `buildItemRow` to follow a clear three-tier priority: per-item override > widget-level sub-style > automatic depth scaling.
-
-## 1.2.0
-
-* Add `itemAlignment` parameter to `FluidSideMenu` accepting the new `FluidMenuItemAlignment` enum (`left`, `center`, `right`) to align all menu items within the drawer.
-* Add `subMenuItemTextStyle` parameter to `FluidSideMenu` for a widget-level text style applied to all nested child items.
-* Add `subMenuItemIconSize` parameter to `FluidSideMenu` for a widget-level icon size applied to all nested child items.
-* Add `onSubItemTapped` callback to `FluidSideMenu`, triggered when any nested sub-item is selected, receiving the parent index and sub-item index.
-* Update `FluidMenuItem` to make `page` optional (supports parent items that act only as dropdown headers).
-* Add `subItems` property to `FluidMenuItem` to declare a list of nested child items.
-* Add `onTap` callback property to `FluidMenuItem` for a custom action executed when a specific item is tapped.
-* Implement recursive `buildMenuItemNode` renderer with `AnimatedSize` expand/collapse transitions and `AnimatedRotation` chevron indicators.
-* Implement path-based active item and tap-feedback tracking (`List<int>`) supporting arbitrary nesting depth.
-* Wrap menu layout in `Align` + `SingleChildScrollView` to support left/center/right alignment and vertical overflow scrolling.
-
 ## 1.1.0
 
-* Add `animationCurve` parameter to `FluidSideMenu` and `FluidMenuPainter` for custom easing of the fluid wave transition.
-* Add `enableSwipeGestures` parameter (default `true`) to allow swiping from the left edge to open and swiping left to close the menu.
-* Add `edgeDragWidth` parameter to control the width of the left edge drag detection zone.
-* Add `revealOrigin` parameter to set a custom `Offset` from which the gooey wave reveal originates.
-* Add `enableHapticFeedback` parameter (default `true`) to trigger `HapticFeedback.lightImpact` on open/close and `HapticFeedback.selectionClick` on item selection.
-* Guard `open()` and `close()` to be no-ops when the animation is already running in the correct direction, preventing double haptic triggers.
-* Move swipe drag-start haptics to fire exactly once at the beginning of each gesture, suppressing duplicate triggers on snap-to-open/close release.
+* Add swipe gestures to open and close the drawer: pull from the left edge (controlled by `edgeDragWidth`) to open, swipe left anywhere when fully open to close.
+* Add velocity-sensitive drag finishing — fast flings snap the drawer in the fling direction.
+* Add `enableSwipeGestures` parameter (default `true`) and `edgeDragWidth` parameter (default `30.0`).
+* Add `animationCurve` parameter to `FluidSideMenu` and `FluidMenuPainter` for custom easing of the fluid wave transition (default `Curves.easeInOutCubic`).
+* Add `revealOrigin` parameter (`Offset?`) to set a custom origin point for the gooey wave reveal.
+* Add `enableHapticFeedback` parameter (default `true`): fires `HapticFeedback.lightImpact` on open/close and `HapticFeedback.selectionClick` on item selection. Haptics are de-duplicated — a single pulse fires at drag-start so no double haptic occurs on snap-to-open/close.
+* Add `itemAlignment` parameter accepting the new `FluidMenuItemAlignment` enum (`left`, `center`, `right`) to align all menu items within the drawer.
+* Add `subMenuItemTextStyle` and `subMenuItemIconSize` parameters for a widget-level style applied to all nested child items.
+* Add `onSubItemTapped` callback triggered with the parent and child index when a nested item is selected.
+* Update `FluidMenuItem`: make `page` optional, add `subItems` (`List<FluidMenuItem>?`) for collapsible dropdown groups of arbitrary depth, add `onTap` custom callback, add `textStyle` and `iconSize` per-item size overrides.
+* Add `enableScroll` parameter (default `true`): wraps the item column in a `SingleChildScrollView` so long lists remain reachable on small screens.
+* Add `scrollPhysics` (`ScrollPhysics?`) and `scrollController` (`ScrollController?`) parameters for custom scroll behavior and programmatic control.
+* Add `scaleChildItemsBasedOnDepth` parameter (default `true`): controls whether font and icon sizes are automatically reduced per nesting level.
+* Add `menuItemPadding` (`EdgeInsets?`) and `subMenuItemPadding` (`EdgeInsets?`) to override default spacing around top-level and nested items respectively.
+* Implement recursive `buildMenuItemNode` renderer with `AnimatedSize` expand/collapse transitions and `AnimatedRotation` chevron indicators for dropdown groups.
+* Implement path-based active item and tap-feedback tracking (`List<int>`) supporting arbitrary nesting depth.
+* Size resolution priority (highest to lowest): per-item `FluidMenuItem.textStyle`/`iconSize` > widget-level `subMenuItemTextStyle`/`subMenuItemIconSize` > automatic depth scaling.
 
 ## 1.0.0
 

@@ -71,7 +71,7 @@ Add `fluid_side_menu` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  fluid_side_menu: ^1.3.0
+  fluid_side_menu: ^1.1.0
 ```
 
 Then import the package in your Dart code:

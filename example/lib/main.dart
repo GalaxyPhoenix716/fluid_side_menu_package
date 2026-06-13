@@ -931,7 +931,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'Fluid Side Menu Package - Version 1.3.0',
+              'Fluid Side Menu Package - Version 1.1.0',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 color: Colors.black38,
