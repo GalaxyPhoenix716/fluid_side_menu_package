@@ -7,130 +7,284 @@ import 'fluid_menu_item.dart';
 
 /// A premium, highly-customizable fluid side navigation drawer widget.
 ///
-/// It renders an organic, gooey liquid-reveal background transition across
-/// five distance-staggered expansion centers, reveals menu options using
-/// staggered entry animations, and provides rich interactive selection feedback.
+/// [FluidSideMenu] renders an organic, gooey liquid-reveal background transition
+/// across five distance-staggered expansion centers using [FluidMenuPainter],
+/// reveals menu options via staggered entry animations, supports arbitrarily
+/// nested dropdown navigation, scrolls automatically when item lists overflow,
+/// and provides rich interactive selection feedback.
+///
+/// ## Basic usage
+/// ```dart
+/// FluidSideMenu(
+///   fluidColor: Colors.black,
+///   menuItems: [
+///     FluidMenuItem(label: 'Home', page: const HomeScreen(), icon: const Icon(Icons.home)),
+///     FluidMenuItem(label: 'About', page: const AboutScreen(), icon: const Icon(Icons.info)),
+///   ],
+/// )
+/// ```
+///
+/// ## Programmatic control
+/// Use [FluidSideMenu.of] to locate the nearest [FluidSideMenuState] and call
+/// [FluidSideMenuState.open], [FluidSideMenuState.close], or
+/// [FluidSideMenuState.toggle] from any descendant widget.
+///
+/// ## Nested navigation
+/// Supply [FluidMenuItem.subItems] to create collapsible dropdown groups.
+/// Groups can be nested to arbitrary depth; each level is tracked via an
+/// integer path list.
 class FluidSideMenu extends StatefulWidget {
-  /// Optional static override for child. If null, the selected page from
-  /// `menuItems` will be shown automatically.
+  /// An optional static main-screen widget override.
+  ///
+  /// When provided, this widget is always shown as the main content regardless
+  /// of which menu item is currently active. Use this when you manage page
+  /// routing yourself (e.g. with a `Navigator`) instead of relying on the
+  /// automatic [FluidMenuItem.page] resolution.
   final Widget? child;
 
-  /// Optional custom builder for content.
+  /// An optional fully custom content builder.
+  ///
+  /// Receives the [BuildContext] and the raw `Animation<double>` progress
+  /// value (0.0 = closed, 1.0 = open). When provided, supersedes both [child]
+  /// and the built-in [FluidMenuItem.page] routing.
   final Widget Function(BuildContext context, Animation<double> animation)?
   contentBuilder;
 
-  /// Helper method to access the state of the closest ancestor [FluidSideMenu]
-  /// from any descendant widget (e.g. to open or close the menu programmatically).
+  /// Locates the nearest [FluidSideMenuState] ancestor in the widget tree.
+  ///
+  /// Returns `null` if no ancestor [FluidSideMenu] is found. Use the returned
+  /// state to call [FluidSideMenuState.open], [FluidSideMenuState.close], or
+  /// [FluidSideMenuState.toggle] programmatically.
+  ///
+  /// ```dart
+  /// FluidSideMenu.of(context)?.open();
+  /// ```
   static FluidSideMenuState? of(BuildContext context) {
     return context.findAncestorStateOfType<FluidSideMenuState>();
   }
 
-  /// The list of items to show in the menu, each containing a label, page, and optional icon.
+  /// The ordered list of [FluidMenuItem]s to display inside the drawer.
+  ///
+  /// Each item can optionally define [FluidMenuItem.subItems] to produce
+  /// collapsible dropdown groups. Items without a [FluidMenuItem.page] are
+  /// treated as group headers that only expand/collapse their children.
   final List<FluidMenuItem> menuItems;
 
-  /// Callback triggered when an item is tapped. The menu will automatically
-  /// perform selection feedback, switch the active page, and close itself.
+  /// Called with the top-level item index when any item (or any of its
+  /// descendant leaf items) is tapped and navigation is triggered.
+  ///
+  /// The menu automatically closes and updates the active page before calling
+  /// this callback. For nested item callbacks, also see [onSubItemTapped].
   final ValueChanged<int>? onItemTapped;
 
-  /// Optional header widget shown at the top of the menu.
+  /// An optional widget displayed at the very top of the menu, above all items.
+  ///
+  /// Wrapped in a [FluidStaggeredMenuItem] so it participates in the same
+  /// staggered entry animation as the item list.
   final Widget? menuHeader;
 
-  /// Optional footer widget shown at the bottom of the menu.
+  /// An optional widget displayed at the very bottom of the menu, below all items.
+  ///
+  /// Wrapped in a [FluidStaggeredMenuItem] so it participates in the staggered
+  /// entry animation.
   final Widget? menuFooter;
 
-  /// Entry animation type for all menu items.
+  /// The entry animation style applied to all menu items as the drawer opens.
+  ///
+  /// Defaults to [FluidMenuAnimationType.slide]. See [FluidMenuAnimationType]
+  /// for all available options.
   final FluidMenuAnimationType menuAnimationType;
 
-  /// Background color for the fluid transition.
+  /// The solid fill color of the liquid-reveal wave background.
+  ///
+  /// Defaults to `Colors.black`. Superseded by [fluidGradient] when provided.
   final Color fluidColor;
 
-  /// Optional gradient background for the fluid transition.
+  /// An optional gradient fill for the liquid-reveal wave background.
+  ///
+  /// When non-null, supersedes [fluidColor] as the wave fill. Supports any
+  /// [Gradient] subtype (e.g. `LinearGradient`, `RadialGradient`).
   final Gradient? fluidGradient;
 
-  /// Duration of the transition animation.
+  /// The total duration of the open and close wave transitions.
+  ///
+  /// Defaults to `Duration(milliseconds: 650)`. Larger values produce a
+  /// slower, more dramatic gooey expansion.
   final Duration duration;
 
-  /// Whether to show the default built-in menu and close toggle buttons.
+  /// Whether the built-in open and close toggle buttons are rendered.
+  ///
+  /// When `true` (default), a circular open button appears at the top-left
+  /// of the screen when the menu is closed, and a close button fades in at
+  /// the top-right as the menu opens. Set `false` to manage toggle buttons
+  /// entirely yourself.
   final bool showBuiltInButtons;
 
-  /// Custom icon/widget for the menu toggle button.
+  /// A custom widget for the built-in open toggle button.
+  ///
+  /// When `null`, defaults to `Icon(Icons.menu)`. Only used when
+  /// [showBuiltInButtons] is `true`.
   final Widget? menuIcon;
 
-  /// Custom icon/widget for the close toggle button.
+  /// A custom widget for the built-in close toggle button.
+  ///
+  /// When `null`, defaults to `Icon(Icons.close, color: Colors.white, size: 30)`.
+  /// Only used when [showBuiltInButtons] is `true`.
   final Widget? closeIcon;
 
-  /// The button radius for the initial menu button.
+  /// The corner radius of the circular menu open toggle button in logical pixels.
+  ///
+  /// Defaults to `20.0`. Also controls the starting radius of the wave reveal
+  /// so the transition looks seamless from the button.
   final double buttonRadius;
 
-  /// The type of selection feedback animation applied when a menu option is tapped.
+  /// The tap selection feedback animation style.
+  ///
+  /// Applied to items immediately after they are tapped. Defaults to
+  /// [FluidMenuSelectAnimationType.scalePulse]. See
+  /// [FluidMenuSelectAnimationType] for all available options.
   final FluidMenuSelectAnimationType selectAnimationType;
 
-  /// Custom text style for the menu options.
+  /// The default text style applied to top-level menu item labels.
+  ///
+  /// The `color` component of this style is overridden by [menuItemTextColor]
+  /// or [FluidMenuItem.textColor] during rendering.
   final TextStyle? menuItemTextStyle;
 
-  /// Custom text color for the menu options. Defaults to white.
+  /// The default label text color applied to all menu items.
+  ///
+  /// Superseded by [FluidMenuItem.textColor] on a per-item basis.
+  /// Defaults to `Colors.white` when both this and `textColor` are `null`.
   final Color? menuItemTextColor;
 
-  /// Custom icon color for the menu options.
+  /// The default icon color applied to all menu item icons.
+  ///
+  /// Superseded by [FluidMenuItem.iconColor] on a per-item basis.
+  /// Defaults to `Colors.white` when both this and `iconColor` are `null`.
   final Color? menuItemIconColor;
 
-  /// Spacing between the icon and the text label.
+  /// The horizontal spacing between an item's [FluidMenuItem.icon] and its label.
+  ///
+  /// Defaults to `12.0` logical pixels. This value is proportionally reduced
+  /// at deeper nesting levels.
   final double menuItemSpacing;
 
-  /// Easing curve for the fluid transition.
+  /// The easing curve applied to the fluid wave transition.
+  ///
+  /// Defaults to `Curves.easeInOutCubic`. Applied once inside [FluidMenuPainter]
+  /// per expansion circle, keeping the `AnimationController` itself linear to
+  /// avoid double-curving.
   final Curve animationCurve;
 
-  /// Whether to enable swipe gestures to open or close the menu.
+  /// Whether horizontal swipe gestures can open or close the drawer.
+  ///
+  /// When `true` (default), dragging right from within [edgeDragWidth] pixels
+  /// of the left edge opens the drawer. Dragging left anywhere on screen when
+  /// the drawer is fully open closes it.
   final bool enableSwipeGestures;
 
-  /// The width of the drag zone at the left edge of the screen when the menu is closed.
+  /// The width of the left-edge drag detection zone in logical pixels.
+  ///
+  /// Only relevant when [enableSwipeGestures] is `true` and the drawer is
+  /// closed. Defaults to `30.0`.
   final double edgeDragWidth;
 
-  /// The custom center offset point from which the fluid wave reveal transition originates.
+  /// Custom screen-space origin point for the gooey wave reveal.
+  ///
+  /// When `null`, defaults to `Offset(44.0, 64.0)` — the approximate position
+  /// of the built-in open toggle button. Changing this moves the visual
+  /// "source" of the liquid expansion to any point on screen.
   final Offset? revealOrigin;
 
-  /// Whether to enable haptic feedback at critical transitions and interactions.
+  /// Whether haptic feedback is triggered at critical transitions.
+  ///
+  /// When `true` (default):
+  /// - [HapticFeedback.lightImpact] fires when the drawer starts opening or
+  ///   closing (button press or swipe start).
+  /// - [HapticFeedback.selectionClick] fires when a menu item is tapped.
+  ///
+  /// Set `false` to silence all haptics globally.
   final bool enableHapticFeedback;
 
-  /// The alignment of the menu items (left, center, or right) within the drawer.
+  /// The horizontal alignment of all menu items within the drawer.
+  ///
+  /// Defaults to [FluidMenuItemAlignment.center]. When set to `left` or
+  /// `right`, nested child items are additionally indented proportional to
+  /// their depth, visually conveying hierarchy.
   final FluidMenuItemAlignment itemAlignment;
 
-  /// Callback triggered when a nested sub-item is tapped.
+  /// Called when a nested sub-item is tapped and navigation is triggered.
+  ///
+  /// Receives the top-level parent index and the immediate child index of the
+  /// selected item. For deeper nesting levels only the first two path indices
+  /// are exposed here; use [onItemTapped] alongside your own state to track
+  /// the full selection path if needed.
   final void Function(int parentIndex, int subIndex)? onSubItemTapped;
 
-  /// Custom text style for the nested sub-menu options.
+  /// The default text style applied to all nested child menu items.
+  ///
+  /// Applied to items at depth >= 1 (i.e. any item inside a [FluidMenuItem.subItems]
+  /// list). Superseded by [FluidMenuItem.textStyle] on a per-item basis.
+  /// When [scaleChildItemsBasedOnDepth] is `true`, the font size of this style
+  /// is further scaled down per depth level.
   final TextStyle? subMenuItemTextStyle;
 
-  /// Custom icon size for the nested sub-menu options.
+  /// The default icon size applied to all nested child menu items, in logical pixels.
+  ///
+  /// Applied to items at depth >= 1. Superseded by [FluidMenuItem.iconSize] on
+  /// a per-item basis. When [scaleChildItemsBasedOnDepth] is `true`, this
+  /// value is further reduced per depth level.
   final double? subMenuItemIconSize;
 
-  /// Whether the menu items column is scrollable when content overflows the screen height.
-  /// Defaults to [true] so long item lists are always reachable.
+  /// Whether the menu item column is wrapped in a [SingleChildScrollView].
+  ///
+  /// Defaults to `true`. When `true`, users can scroll the item list to reach
+  /// items below the visible area — especially useful when multiple nested
+  /// groups are expanded simultaneously on small screens.
+  ///
+  /// Set `false` for a fixed-height, non-scrollable menu.
   final bool enableScroll;
 
-  /// Scroll physics for the menu item list.
-  /// If null the default platform [ClampingScrollPhysics] is used.
+  /// The scroll physics used by the menu's [SingleChildScrollView].
+  ///
+  /// Only relevant when [enableScroll] is `true`. Defaults to
+  /// [ClampingScrollPhysics]. Supply [BouncingScrollPhysics] for an iOS-style
+  /// feel or [NeverScrollableScrollPhysics] to suppress scrolling programmatically.
   final ScrollPhysics? scrollPhysics;
 
-  /// An optional [ScrollController] for the menu item list.
+  /// An optional [ScrollController] for the menu's [SingleChildScrollView].
+  ///
+  /// Only relevant when [enableScroll] is `true`. Allows programmatic control
+  /// of the scroll position (e.g. to scroll to a specific item on open).
   final ScrollController? scrollController;
 
-  /// Whether nested child items should be scaled down automatically based on
-  /// their depth level. When [false] every depth level uses the same text and
-  /// icon size, which is useful when per-item sizes are set directly on
-  /// [FluidMenuItem.textStyle] / [FluidMenuItem.iconSize].
-  /// Defaults to [true].
+  /// Whether nested child items are automatically scaled down per nesting level.
+  ///
+  /// When `true` (default), font size and icon size of each item are reduced
+  /// by a fixed factor for every additional depth level. This ensures deeply
+  /// nested items don't overwhelm the layout.
+  ///
+  /// Set `false` when you are using [FluidMenuItem.textStyle] and
+  /// [FluidMenuItem.iconSize] to manage sizes explicitly, and automatic
+  /// reduction would conflict with your intent.
   final bool scaleChildItemsBasedOnDepth;
 
-  /// Vertical padding around each top-level menu item.
-  /// Defaults to `EdgeInsets.symmetric(vertical: 12.0)`.
+  /// Vertical padding surrounding each top-level menu item row.
+  ///
+  /// Defaults to `EdgeInsets.symmetric(vertical: 12.0)`. Reducing this value
+  /// lets more items fit on screen before scrolling is required.
   final EdgeInsets? menuItemPadding;
 
-  /// Vertical padding above each nested (child) menu item.
-  /// Defaults to `EdgeInsets.only(top: 12.0)`.
+  /// Vertical padding above each nested child item row.
+  ///
+  /// Defaults to `EdgeInsets.only(top: 12.0)`. Controls the visual spacing
+  /// between sibling child items inside an expanded dropdown group.
   final EdgeInsets? subMenuItemPadding;
 
-  /// Creates a [FluidSideMenu] navigation drawer with transition properties.
+  /// Creates a [FluidSideMenu] navigation drawer.
+  ///
+  /// Only [menuItems] is required. All other parameters have sensible defaults
+  /// that produce a polished out-of-the-box experience.
   const FluidSideMenu({
     super.key,
     required this.menuItems,
@@ -173,28 +327,67 @@ class FluidSideMenu extends StatefulWidget {
   State<FluidSideMenu> createState() => FluidSideMenuState();
 }
 
-/// State for the [FluidSideMenu] widget that drives the transition animations.
+/// Mutable state for a [FluidSideMenu] widget.
+///
+/// Owns the [AnimationController] that drives the open/close wave transition
+/// and manages all ephemeral UI state: drag tracking, item path selection,
+/// expanded dropdown paths, and menu interactability.
+///
+/// Access this state from anywhere in the subtree via [FluidSideMenu.of]:
+/// ```dart
+/// FluidSideMenu.of(context)?.open();
+/// ```
 class FluidSideMenuState extends State<FluidSideMenu>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+
+  /// The raw linear animation output of [_controller].
+  ///
+  /// Kept linear to avoid double-curving; the easing curve is applied
+  /// independently inside [FluidMenuPainter].
   late Animation<double> _animation;
+
+  /// Whether the menu overlay is currently accepting pointer events.
+  ///
+  /// Becomes `true` once the controller value exceeds `0.55` during opening
+  /// (the fluid background is visually far enough along to be interactive)
+  /// and returns to `false` immediately when closing begins.
   bool _isMenuInteractable = false;
 
-  // Track tapped path to play selection feedback
+  /// The path of the most recently tapped item, used to drive selection
+  /// feedback animations (scale, slide, fade) during the brief window between
+  /// the tap and the menu closing.
+  ///
+  /// `null` when no tap is in progress. Reset to `null` after the menu fully
+  /// closes via the [AnimationStatus.dismissed] listener.
   List<int>? _tappedItemPath;
 
-  // Track currently active page path
+  /// The path of the currently active (navigated-to) item.
+  ///
+  /// A path of `[0]` means the first top-level item is active. A path of
+  /// `[1, 2]` means the third child of the second top-level item is active.
+  /// Used to resolve the [FluidMenuItem.page] to display and to render the
+  /// item list without any dimming/scaling when the menu is closed.
   List<int> _activeItemPath = [0];
 
-  // Track expanded dropdown parent paths
+  /// Serialized paths of all currently expanded dropdown parent items.
+  ///
+  /// Keys are path indices joined by commas (e.g. `"1"`, `"1,0"`). Using a
+  /// [Set<String>] allows O(1) expand/collapse toggling and membership tests.
   final Set<String> _expandedPaths = {};
 
+  /// Whether a horizontal drag gesture is currently being tracked.
   bool _isDragging = false;
 
-  /// Returns whether the side navigation drawer is currently open.
+  /// Whether the drawer is currently past its midpoint in the open direction.
+  ///
+  /// Returns `true` when `_controller.value > 0.5`.
   bool get isMenuOpen => _controller.value > 0.5;
 
-  /// Returns the current transition progress animation.
+  /// The animation that drives the wave reveal and menu item entry transitions.
+  ///
+  /// Expose this to `contentBuilder` so custom content layers can animate
+  /// in sync with the fluid transition.
   Animation<double> get animation => _animation;
 
   @override
@@ -202,9 +395,10 @@ class FluidSideMenuState extends State<FluidSideMenu>
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
 
-    _animation =
-        _controller; // Linear progress to avoid double-curving in the painter
+    // Keep the animation linear — the easing curve is applied inside the painter.
+    _animation = _controller;
 
+    // Flip interactability when the wave has visually covered enough of the screen.
     _controller.addListener(() {
       final interactable = _controller.value > 0.55;
       if (interactable != _isMenuInteractable) {
@@ -214,9 +408,10 @@ class FluidSideMenuState extends State<FluidSideMenu>
       }
     });
 
+    // Clear the tapped path state once the drawer has fully closed, so that
+    // selection feedback is not visible on the next open.
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.dismissed) {
-        // Reset selection feedback when menu is completely closed
         setState(() {
           _tappedItemPath = null;
         });
@@ -227,6 +422,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
   @override
   void didUpdateWidget(covariant FluidSideMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Sync the controller duration if the widget is rebuilt with a new value.
     if (oldWidget.duration != widget.duration) {
       _controller.duration = widget.duration;
     }
@@ -238,7 +434,11 @@ class FluidSideMenuState extends State<FluidSideMenu>
     super.dispose();
   }
 
-  /// Open the fluid menu programmatically
+  /// Opens the drawer programmatically.
+  ///
+  /// A no-op if the drawer is already fully open or currently animating open.
+  /// When [triggerHaptic] is `true` (default) and [FluidSideMenu.enableHapticFeedback]
+  /// is `true`, fires [HapticFeedback.lightImpact].
   void open({bool triggerHaptic = true}) {
     if (_controller.value == 1.0 ||
         _controller.status == AnimationStatus.forward) {
@@ -250,7 +450,11 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
-  /// Close the fluid menu programmatically
+  /// Closes the drawer programmatically.
+  ///
+  /// A no-op if the drawer is already fully closed or currently animating closed.
+  /// When [triggerHaptic] is `true` (default) and [FluidSideMenu.enableHapticFeedback]
+  /// is `true`, fires [HapticFeedback.lightImpact].
   void close({bool triggerHaptic = true}) {
     if (_controller.value == 0.0 ||
         _controller.status == AnimationStatus.reverse) {
@@ -262,7 +466,8 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
-  /// Toggle the fluid menu programmatically
+  /// Toggles the drawer open if it is past the midpoint closed, and closed
+  /// if it is past the midpoint open.
   void toggle() {
     if (_controller.value > 0.5) {
       close();
@@ -271,6 +476,16 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
+  /// Handles the beginning of a horizontal drag gesture.
+  ///
+  /// Opens a drag session when:
+  /// - The drawer is fully closed and the drag starts within [FluidSideMenu.edgeDragWidth]
+  ///   pixels of the left edge.
+  /// - The drawer is fully open (regardless of horizontal position).
+  ///
+  /// Fires a haptic pulse exactly once at the start of each valid drag session
+  /// to avoid the double-haptic issue that would occur if haptics were also
+  /// fired on the snap-to-open/close at [_handleDragEnd].
   void _handleDragStart(DragStartDetails details) {
     if (!widget.enableSwipeGestures) return;
     if (_controller.isAnimating) return;
@@ -297,6 +512,10 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
+  /// Translates drag delta into controller progress while a session is active.
+  ///
+  /// The delta is normalized by screen width so the drag distance maps
+  /// linearly to the `[0.0, 1.0]` animation range.
   void _handleDragUpdate(DragUpdateDetails details) {
     if (!_isDragging) return;
     final double width = MediaQuery.of(context).size.width;
@@ -305,6 +524,14 @@ class FluidSideMenuState extends State<FluidSideMenu>
     _controller.value = (_controller.value + delta / width).clamp(0.0, 1.0);
   }
 
+  /// Finalizes a drag session by snapping the drawer open or closed.
+  ///
+  /// If the release velocity exceeds `365 px/s`, the drawer is flung in the
+  /// velocity direction. Otherwise it snaps to open or closed based on whether
+  /// the controller value is above or below `0.5`.
+  ///
+  /// Haptics are suppressed on the snap calls (`triggerHaptic: false`) because
+  /// a single haptic was already fired at [_handleDragStart].
   void _handleDragEnd(DragEndDetails details) {
     if (!_isDragging) return;
     setState(() {
@@ -331,6 +558,16 @@ class FluidSideMenuState extends State<FluidSideMenu>
     }
   }
 
+  /// Handles a confirmed tap on a leaf (non-parent) menu item identified by [path].
+  ///
+  /// Fires [HapticFeedback.selectionClick] once, records [path] as the
+  /// [_tappedItemPath] to start the selection feedback animation, and after a
+  /// short delay (dependent on [FluidSideMenu.selectAnimationType]) updates the
+  /// [_activeItemPath], closes the drawer, and invokes [FluidSideMenu.onItemTapped]
+  /// and [FluidSideMenu.onSubItemTapped].
+  ///
+  /// Re-entrancy is blocked by checking [_tappedItemPath] != null so that
+  /// rapid consecutive taps do not produce double feedback or double haptics.
   void _handlePathTap(List<int> path) {
     if (_tappedItemPath != null) return; // Prevent double taps during animation
 
@@ -532,6 +769,15 @@ class FluidSideMenuState extends State<FluidSideMenu>
     );
   }
 
+  /// Builds the animated overlay that displays all menu items.
+  ///
+  /// Computes alignment and padding from [FluidSideMenu.itemAlignment], then
+  /// constructs a vertical column of staggered [FluidStaggeredMenuItem] wrappers
+  /// for each item in [FluidSideMenu.menuItems] via the recursive
+  /// [buildMenuItemNode] function.
+  ///
+  /// When [FluidSideMenu.enableScroll] is `true` the column is wrapped in a
+  /// [SingleChildScrollView] so that overflow content remains reachable.
   Widget _buildMenuContent() {
     final hasHeader = widget.menuHeader != null;
     final hasFooter = widget.menuFooter != null;

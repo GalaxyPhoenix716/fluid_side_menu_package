@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fluid_side_menu/fluid_side_menu.dart';
 
+/// Entry point of the Fluid Side Menu example application.
 void main() {
   runApp(const MyApp());
 }
 
+/// Root widget for the demo application.
+///
+/// Applies a light Material3 theme with the Outfit Google Font and launches
+/// [DemoScreen] as the home route.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -25,6 +30,11 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// The main demo screen that hosts [FluidSideMenu].
+///
+/// Holds all interactive configurator state (animation type, curve, alignment,
+/// swipe gestures, haptics, gradient toggle, and wave origin) and rebuilds the
+/// [FluidSideMenu] whenever the user changes a setting via the controls panel.
 class DemoScreen extends StatefulWidget {
   const DemoScreen({super.key});
 
@@ -33,10 +43,20 @@ class DemoScreen extends StatefulWidget {
 }
 
 class _DemoScreenState extends State<DemoScreen> {
-  // State variables for animation configuration
+  // ---------------------------------------------------------------------------
+  // Configurator state
+  // Each field maps to one control in the "TRANSITION CONFIGURATOR" panel and
+  // is passed directly to the [FluidSideMenu] widget on every rebuild.
+  // ---------------------------------------------------------------------------
+
+  /// Currently selected menu item entrance animation.
   FluidMenuAnimationType _entryAnimation = FluidMenuAnimationType.slide;
+
+  /// Currently selected item tap selection feedback animation.
   FluidMenuSelectAnimationType _selectAnimation =
       FluidMenuSelectAnimationType.scalePulse;
+
+  /// Whether the drawer background should use a gradient (`true`) or a solid color.
   bool _useGradient = true;
   Curve _animationCurve = Curves.easeInOutCubic;
   bool _enableSwipe = true;
@@ -911,7 +931,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'Fluid Side Menu Package - Version 1.0.0',
+              'Fluid Side Menu Package - Version 1.3.0',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 color: Colors.black38,
