@@ -71,7 +71,7 @@ Add `fluid_side_menu` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  fluid_side_menu: ^1.1.0
+  fluid_side_menu: ^1.2.0
 ```
 
 Then import the package in your Dart code:
@@ -235,6 +235,10 @@ FluidSideMenu.of(context)?.close();
 
 // Toggle the side menu
 FluidSideMenu.of(context)?.toggle();
+
+// Dynamically enable/disable items by path (top-level or nested sub-items)
+FluidSideMenu.of(context)?.setItemEnabled([4], false); // Disables the 5th item
+FluidSideMenu.of(context)?.setItemEnabled([1, 1, 0], true); // Enables a deep nested child item
 ```
 
 Alternatively assign a `GlobalKey<FluidSideMenuState>` and call `key.currentState?.open()`.
@@ -336,6 +340,7 @@ To disable scrolling entirely and keep a fixed layout, set `enableScroll: false`
 | `iconSize` | `double?` | `null` | Per-item icon size override. Takes precedence over all widget-level sizes and depth scaling. |
 | `subItems` | `List<FluidMenuItem>?` | `null` | Nested child items. When provided, tapping the item expands or collapses a dropdown instead of navigating. |
 | `onTap` | `VoidCallback?` | `null` | Custom callback fired when this specific item is tapped, before any built-in expand or navigation logic. |
+| `isEnabled` | `bool` | `true` | Statically determines whether the item is active. When false, the item is grayed out, unclickable, and ignores selection effects. |
 
 **Size resolution priority (highest to lowest):**
 

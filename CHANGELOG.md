@@ -1,3 +1,10 @@
+## 1.2.0
+
+* Add `isEnabled` property to `FluidMenuItem` (default `true`) to statically disable menu items. Disabled items are visually grayed out, ignore selection animations, and do not respond to tap/pointer interactions.
+* Add programmatic control to enable or disable menu items dynamically from anywhere in the app using `FluidSideMenu.of(context)?.setItemEnabled(path, enabled)`.
+* Add custom hover cursor behaviors on desktop/web platforms (`SystemMouseCursors.forbidden` for disabled items, `SystemMouseCursors.click` for active items).
+* Update example app to demonstrate static and dynamic disabling behaviors.
+
 ## 1.1.0
 
 * Add swipe gestures to open and close the drawer: pull from the left edge (controlled by `edgeDragWidth`) to open, swipe left anywhere when fully open to close.

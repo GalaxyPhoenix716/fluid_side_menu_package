@@ -90,6 +90,14 @@ class FluidMenuItem {
   /// 3. Automatic depth scaling (when [FluidSideMenu.scaleChildItemsBasedOnDepth] is `true`)
   final double? iconSize;
 
+  /// Whether this item is enabled and can be interacted with.
+  ///
+  /// Statically defaults to `true`. When `false`, the menu item is visually
+  /// grayed out, does not respond to taps, and does not expand its child items.
+  /// This can be dynamically overridden at runtime using
+  /// [FluidSideMenuState.setItemEnabled].
+  final bool isEnabled;
+
   /// Creates a [FluidMenuItem] with the given navigation and style properties.
   ///
   /// Only [label] is required. All other parameters are optional.
@@ -103,6 +111,7 @@ class FluidMenuItem {
     this.onTap,
     this.textStyle,
     this.iconSize,
+    this.isEnabled = true,
   });
 }
 

@@ -376,6 +376,12 @@ class FluidSideMenuState extends State<FluidSideMenu>
   /// [Set<String>] allows O(1) expand/collapse toggling and membership tests.
   final Set<String> _expandedPaths = {};
 
+  /// Serialized paths of all items whose enabled state is dynamically overridden.
+  ///
+  /// Keys are path indices joined by commas (e.g. `"1"`, `"1,0"`). Overrides in
+  /// this map take precedence over the static [FluidMenuItem.isEnabled] property.
+  final Map<String, bool> _enabledOverrides = {};
+
   /// Whether a horizontal drag gesture is currently being tracked.
   bool _isDragging = false;
 
@@ -383,6 +389,12 @@ class FluidSideMenuState extends State<FluidSideMenu>
   ///
   /// Returns `true` when `_controller.value > 0.5`.
   bool get isMenuOpen => _controller.value > 0.5;
+
+  /// Whether the menu is currently accepting tap and pointer interactions.
+  bool get isMenuInteractable => _isMenuInteractable;
+
+  /// The current progress value of the menu transition animation.
+  double get controllerValue => _controller.value;
 
   /// The animation that drives the wave reveal and menu item entry transitions.
   ///
@@ -474,6 +486,47 @@ class FluidSideMenuState extends State<FluidSideMenu>
     } else {
       open();
     }
+  }
+
+  /// Programmatically enables or disables a menu item at the given [path].
+  ///
+  /// The [path] represents the hierarchy of the item (e.g., `[0]` for the
+  /// first top-level item, or `[1, 2]` for the third child of the second
+  /// top-level item).
+  ///
+  /// Runtime overrides set by this method take precedence over the static
+  /// [FluidMenuItem.isEnabled] property.
+  void setItemEnabled(List<int> path, bool enabled) {
+    if (!mounted) return;
+    setState(() {
+      _enabledOverrides[path.join(',')] = enabled;
+    });
+  }
+
+  /// Returns whether the item at the given [path] is currently enabled.
+  ///
+  /// This checks any dynamic runtime overrides first, falling back to the
+  /// item's static [FluidMenuItem.isEnabled] property.
+  bool isItemEnabled(List<int> path) {
+    final String pathKey = path.join(',');
+    if (_enabledOverrides.containsKey(pathKey)) {
+      return _enabledOverrides[pathKey]!;
+    }
+
+    if (path.isEmpty || path[0] < 0 || path[0] >= widget.menuItems.length) {
+      return false;
+    }
+
+    FluidMenuItem currentItem = widget.menuItems[path[0]];
+    for (int i = 1; i < path.length; i++) {
+      final subItems = currentItem.subItems;
+      if (subItems == null || path[i] < 0 || path[i] >= subItems.length) {
+        return false;
+      }
+      currentItem = subItems[path[i]];
+    }
+
+    return currentItem.isEnabled;
   }
 
   /// Handles the beginning of a horizontal drag gesture.
@@ -812,9 +865,10 @@ class FluidSideMenuState extends State<FluidSideMenu>
       required bool isSelected,
       required bool isAnySelected,
       required bool isParentOfSelected,
-      required VoidCallback onTap,
+      required VoidCallback? onTap,
       bool isSubItem = false,
       bool isExpanded = false,
+      bool isDisabled = false,
     }) {
       final int depth = path.length - 1;
 
@@ -890,7 +944,11 @@ class FluidSideMenuState extends State<FluidSideMenu>
       Offset labelSlideOffset = Offset.zero;
       Offset iconSlideOffset = Offset.zero;
 
-      if (isAnySelected) {
+      if (isDisabled) {
+        itemOpacity = 0.35;
+        itemScale = 1.0;
+        itemSlideOffset = Offset.zero;
+      } else if (isAnySelected) {
         if (isSelected) {
           itemOpacity = 1.0;
           itemScale =
@@ -932,95 +990,104 @@ class FluidSideMenuState extends State<FluidSideMenu>
 
       return Padding(
         padding: EdgeInsets.only(left: indentLeft, right: indentRight),
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: AnimatedSlide(
-            offset: itemSlideOffset,
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOutCubic,
-            child: AnimatedScale(
-              scale: itemScale,
+        child: MouseRegion(
+          cursor: isDisabled
+              ? SystemMouseCursors.forbidden
+              : (onTap != null
+                    ? SystemMouseCursors.click
+                    : SystemMouseCursors.basic),
+          child: GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedSlide(
+              offset: itemSlideOffset,
               duration: const Duration(milliseconds: 160),
               curve: Curves.easeOutCubic,
-              child: AnimatedOpacity(
-                opacity: itemOpacity,
+              child: AnimatedScale(
+                scale: itemScale,
                 duration: const Duration(milliseconds: 160),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (item.icon != null) ...[
-                      AnimatedSlide(
-                        offset: iconSlideOffset,
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeInOutCubic,
-                        child: IconTheme(
-                          data: IconThemeData(
-                            color: resolvedIconColor,
-                            size: iconSize,
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: itemOpacity,
+                  duration: const Duration(milliseconds: 160),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (item.icon != null) ...[
+                        AnimatedSlide(
+                          offset: iconSlideOffset,
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeInOutCubic,
+                          child: IconTheme(
+                            data: IconThemeData(
+                              color: resolvedIconColor,
+                              size: iconSize,
+                            ),
+                            child: item.icon!,
                           ),
-                          child: item.icon!,
                         ),
-                      ),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeInOutCubic,
-                        width:
-                            isSelected &&
-                                widget.selectAnimationType ==
-                                    FluidMenuSelectAnimationType.iconSlideSwap
-                            ? 0.0
-                            : itemSpacing,
-                      ),
-                    ],
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 260),
-                      curve: Curves.easeInOutCubic,
-                      child: AnimatedOpacity(
-                        opacity: labelOpacity,
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeInOutCubic,
-                        child: SizedBox(
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeInOutCubic,
                           width:
                               isSelected &&
                                   widget.selectAnimationType ==
                                       FluidMenuSelectAnimationType.iconSlideSwap
                               ? 0.0
-                              : null,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const NeverScrollableScrollPhysics(),
-                            child: AnimatedSlide(
-                              offset: labelSlideOffset,
-                              duration: const Duration(milliseconds: 260),
-                              curve: Curves.easeInOutCubic,
-                              child: Text(
-                                item.label,
-                                maxLines: 1,
-                                style: resolvedTextStyle,
+                              : itemSpacing,
+                        ),
+                      ],
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeInOutCubic,
+                        child: AnimatedOpacity(
+                          opacity: labelOpacity,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeInOutCubic,
+                          child: SizedBox(
+                            width:
+                                isSelected &&
+                                    widget.selectAnimationType ==
+                                        FluidMenuSelectAnimationType
+                                            .iconSlideSwap
+                                ? 0.0
+                                : null,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const NeverScrollableScrollPhysics(),
+                              child: AnimatedSlide(
+                                offset: labelSlideOffset,
+                                duration: const Duration(milliseconds: 260),
+                                curve: Curves.easeInOutCubic,
+                                child: Text(
+                                  item.label,
+                                  maxLines: 1,
+                                  style: resolvedTextStyle,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    if (item.subItems != null && item.subItems!.isNotEmpty) ...[
-                      const SizedBox(width: 8.0),
-                      AnimatedRotation(
-                        turns: isExpanded ? 0.5 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Opacity(
-                          opacity: 0.7,
-                          child: Icon(
-                            Icons.keyboard_arrow_down,
-                            size: iconSize - 2,
-                            color: resolvedIconColor,
+                      if (item.subItems != null &&
+                          item.subItems!.isNotEmpty) ...[
+                        const SizedBox(width: 8.0),
+                        AnimatedRotation(
+                          turns: isExpanded ? 0.5 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Opacity(
+                            opacity: 0.7,
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              size: iconSize - 2,
+                              color: resolvedIconColor,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1038,6 +1105,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
       final pathKey = path.join(',');
       final isExpanded = _expandedPaths.contains(pathKey);
       final isAnySelected = _tappedItemPath != null;
+      final bool isDisabled = !isItemEnabled(path);
 
       bool isSelected = false;
       bool isParentOfSelected = false;
@@ -1070,22 +1138,25 @@ class FluidSideMenuState extends State<FluidSideMenu>
         isParentOfSelected: isParentOfSelected,
         isSubItem: path.length > 1,
         isExpanded: isExpanded,
-        onTap: () {
-          if (item.onTap != null) {
-            item.onTap!();
-          }
-          if (hasSubItems) {
-            setState(() {
-              if (_expandedPaths.contains(pathKey)) {
-                _expandedPaths.remove(pathKey);
-              } else {
-                _expandedPaths.add(pathKey);
-              }
-            });
-          } else {
-            _handlePathTap(path);
-          }
-        },
+        isDisabled: isDisabled,
+        onTap: isDisabled
+            ? null
+            : () {
+                if (item.onTap != null) {
+                  item.onTap!();
+                }
+                if (hasSubItems) {
+                  setState(() {
+                    if (_expandedPaths.contains(pathKey)) {
+                      _expandedPaths.remove(pathKey);
+                    } else {
+                      _expandedPaths.add(pathKey);
+                    }
+                  });
+                } else {
+                  _handlePathTap(path);
+                }
+              },
       );
 
       if (!hasSubItems) {

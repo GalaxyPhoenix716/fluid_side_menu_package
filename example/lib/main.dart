@@ -145,6 +145,11 @@ class _DemoScreenState extends State<DemoScreen> {
         icon: const Icon(Icons.info),
       ),
       FluidMenuItem(
+        label: 'Admin (Disabled)',
+        icon: const Icon(Icons.lock_outline),
+        isEnabled: false,
+      ),
+      FluidMenuItem(
         label: 'Contact us',
         page: const ContactScreen(),
         icon: const Icon(Icons.mail),
@@ -825,10 +830,18 @@ class _DemoScreenState extends State<DemoScreen> {
 // PROPER STATELESS WIDGETS FOR REAL-WORLD SCREEN DEMONSTRATION
 // =========================================================================
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final Widget configuratorPanel;
 
   const HomeScreen({super.key, required this.configuratorPanel});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _contactUsEnabled = true;
+  bool _birthdayGiftsEnabled = true;
 
   @override
   Widget build(BuildContext context) {
@@ -858,6 +871,82 @@ class HomeScreen extends StatelessWidget {
                     letterSpacing: 0.5,
                   ),
                 ),
+                const SizedBox(height: 24.0),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 4.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enable 'Contact us' item:",
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Switch.adaptive(
+                        value: _contactUsEnabled,
+                        activeTrackColor: Colors.purpleAccent,
+                        onChanged: (val) {
+                          setState(() {
+                            _contactUsEnabled = val;
+                          });
+                          // Path: [4] -> Contact us is the 5th item (index 4)
+                          FluidSideMenu.of(context)?.setItemEnabled([4], val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12.0),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 4.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enable 'Birthday Gifts' sub-item:",
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Switch.adaptive(
+                        value: _birthdayGiftsEnabled,
+                        activeTrackColor: Colors.purpleAccent,
+                        onChanged: (val) {
+                          setState(() {
+                            _birthdayGiftsEnabled = val;
+                          });
+                          // Path: [1, 1, 0] -> Categories (1) -> Gifts (1) -> Birthday Gifts (0)
+                          FluidSideMenu.of(
+                            context,
+                          )?.setItemEnabled([1, 1, 0], val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -865,7 +954,7 @@ class HomeScreen extends StatelessWidget {
             left: 24.0,
             right: 24.0,
             bottom: 40.0,
-            child: configuratorPanel,
+            child: widget.configuratorPanel,
           ),
         ],
       ),
@@ -931,7 +1020,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'Fluid Side Menu Package - Version 1.1.0',
+              'Fluid Side Menu Package - Version 1.2.0',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 color: Colors.black38,
