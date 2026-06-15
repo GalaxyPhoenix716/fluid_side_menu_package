@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluid_side_menu/fluid_side_menu.dart';
 
@@ -49,23 +50,8 @@ void main() {
     );
 
     // Open the menu programmatically so it is interactive
-    debugPrint('Is menu open before open(): ${key.currentState?.isMenuOpen}');
-    debugPrint(
-      'Is menu interactable before open(): ${key.currentState?.isMenuInteractable}',
-    );
-    debugPrint(
-      'Controller value before open(): ${key.currentState?.controllerValue}',
-    );
     key.currentState?.open(triggerHaptic: false);
     await tester.pumpAndSettle();
-    debugPrint('Is menu open after open(): ${key.currentState?.isMenuOpen}');
-    debugPrint(
-      'Is menu interactable after open(): ${key.currentState?.isMenuInteractable}',
-    );
-    debugPrint(
-      'Controller value after open(): ${key.currentState?.controllerValue}',
-    );
-    debugPrint('Rect of Home: ${tester.getRect(find.text('Home'))}');
 
     // Verify both items are rendered
     expect(find.text('Home'), findsOneWidget);
@@ -117,6 +103,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(itemTapped, isTrue);
 
+    // Reopen the menu since the tap closed it
+    key.currentState?.open(triggerHaptic: false);
+    await tester.pumpAndSettle();
+
     // Reset tap flag
     itemTapped = false;
 
@@ -128,7 +118,7 @@ void main() {
     expect(key.currentState?.isItemEnabled([0]), isFalse);
 
     // Try tapping the item again (should NOT fire callback)
-    await tester.tap(find.text('Dynamic Item'));
+    await tester.tap(find.text('Dynamic Item'), warnIfMissed: false);
     await tester.pumpAndSettle();
     expect(itemTapped, isFalse);
 
@@ -143,5 +133,155 @@ void main() {
     await tester.tap(find.text('Dynamic Item'));
     await tester.pumpAndSettle();
     expect(itemTapped, isTrue);
+  });
+
+  testWidgets('FluidSideMenu hover updates scale, offset, and color', (
+    WidgetTester tester,
+  ) async {
+    final items = [
+      FluidMenuItem(label: 'Home'),
+      FluidMenuItem(label: 'Settings'),
+    ];
+
+    final key = GlobalKey<FluidSideMenuState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FluidSideMenu(
+            key: key,
+            menuItems: items,
+            showBuiltInButtons: false,
+            hoverColor: Colors.amber,
+            hoverBackgroundColor: Colors.red,
+            hoverScale: 1.12,
+            hoverOffset: const Offset(0.08, 0.0),
+          ),
+        ),
+      ),
+    );
+
+    key.currentState?.open(triggerHaptic: false);
+    await tester.pumpAndSettle();
+
+    final homeFinder = find.text('Home');
+    final homeMouseRegionFinder = find.ancestor(
+      of: homeFinder,
+      matching: find.byType(MouseRegion),
+    ).first;
+
+    // Initially not hovered, check defaults
+    final initialScale = tester.widget<AnimatedScale>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(initialScale.scale, 1.0);
+
+    final initialSlide = tester.widget<AnimatedSlide>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedSlide)).first,
+    );
+    expect(initialSlide.offset, Offset.zero);
+
+    // Hover mouse over Home
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: tester.getCenter(homeFinder));
+    await tester.pumpAndSettle();
+
+    // Check hovered values
+    final hoveredScale = tester.widget<AnimatedScale>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(hoveredScale.scale, 1.12);
+
+    final hoveredSlide = tester.widget<AnimatedSlide>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedSlide)).first,
+    );
+    expect(hoveredSlide.offset, const Offset(0.08, 0.0));
+
+    final hoveredText = tester.widget<AnimatedDefaultTextStyle>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedDefaultTextStyle)).first,
+    );
+    expect(hoveredText.style.color, Colors.amber);
+
+    final hoveredContainer = tester.widget<AnimatedContainer>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedContainer)).first,
+    );
+    final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+    expect(hoveredDecoration.color, Colors.red);
+
+    // Move mouse away (unhover)
+    await gesture.moveTo(Offset.zero);
+    await tester.pumpAndSettle();
+
+    // Verify values reverted
+    final unhoveredScale = tester.widget<AnimatedScale>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(unhoveredScale.scale, 1.0);
+
+    final unhoveredSlide = tester.widget<AnimatedSlide>(
+      find.descendant(of: homeMouseRegionFinder, matching: find.byType(AnimatedSlide)).first,
+    );
+    expect(unhoveredSlide.offset, Offset.zero);
+
+    await gesture.removePointer();
+  });
+
+  testWidgets('FluidSideMenu disabled item ignores hover styling', (
+    WidgetTester tester,
+  ) async {
+    final items = [
+      FluidMenuItem(label: 'Disabled Item', isEnabled: false),
+    ];
+
+    final key = GlobalKey<FluidSideMenuState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FluidSideMenu(
+            key: key,
+            menuItems: items,
+            showBuiltInButtons: false,
+            hoverColor: Colors.amber,
+            hoverBackgroundColor: Colors.red,
+            hoverScale: 1.12,
+            hoverOffset: const Offset(0.08, 0.0),
+          ),
+        ),
+      ),
+    );
+
+    key.currentState?.open(triggerHaptic: false);
+    await tester.pumpAndSettle();
+
+    final itemFinder = find.text('Disabled Item');
+    final mouseRegionFinder = find.ancestor(
+      of: itemFinder,
+      matching: find.byType(MouseRegion),
+    ).first;
+
+    // Initial scale check
+    final initialScale = tester.widget<AnimatedScale>(
+      find.descendant(of: mouseRegionFinder, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(initialScale.scale, 1.0);
+
+    // Hover mouse over Disabled Item
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: tester.getCenter(itemFinder));
+    await tester.pumpAndSettle();
+
+    // Check scale remains 1.0 (ignored hover)
+    final hoveredScale = tester.widget<AnimatedScale>(
+      find.descendant(of: mouseRegionFinder, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(hoveredScale.scale, 1.0);
+
+    final hoveredSlide = tester.widget<AnimatedSlide>(
+      find.descendant(of: mouseRegionFinder, matching: find.byType(AnimatedSlide)).first,
+    );
+    expect(hoveredSlide.offset, Offset.zero);
+
+    await gesture.removePointer();
   });
 }

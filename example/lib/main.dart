@@ -64,6 +64,13 @@ class _DemoScreenState extends State<DemoScreen> {
   bool _enableHaptic = true;
   FluidMenuItemAlignment _itemAlignment = FluidMenuItemAlignment.center;
 
+  // Hover styling configuration state variables
+  bool _enableHover = true;
+  double _hoverScale = 1.05;
+  double _hoverSlide = 0.05;
+  String _hoverBgPreset = 'WHITE'; // 'NONE', 'WHITE', 'PURPLE'
+  String _hoverColorPreset = 'WHITE'; // 'ORIGINAL', 'WHITE', 'AMBER'
+
   @override
   Widget build(BuildContext context) {
     // Define the menu items containing label, page widget, and optional colors/icons
@@ -167,6 +174,24 @@ class _DemoScreenState extends State<DemoScreen> {
       revealOrigin = Offset(screenWidth / 2, screenHeight / 2);
     }
 
+    Color? hoverColor;
+    if (_enableHover) {
+      if (_hoverColorPreset == 'WHITE') {
+        hoverColor = Colors.white;
+      } else if (_hoverColorPreset == 'AMBER') {
+        hoverColor = Colors.amberAccent;
+      }
+    }
+
+    Color? hoverBackgroundColor;
+    if (_enableHover) {
+      if (_hoverBgPreset == 'WHITE') {
+        hoverBackgroundColor = Colors.white.withValues(alpha: 0.12);
+      } else if (_hoverBgPreset == 'PURPLE') {
+        hoverBackgroundColor = Colors.purple.withValues(alpha: 0.25);
+      }
+    }
+
     return Scaffold(
       body: FluidSideMenu(
         fluidColor: Colors.black,
@@ -211,6 +236,10 @@ class _DemoScreenState extends State<DemoScreen> {
         // Reduce vertical padding slightly so more items fit before scrolling
         menuItemPadding: const EdgeInsets.symmetric(vertical: 9.0),
         subMenuItemPadding: const EdgeInsets.only(top: 10.0),
+        hoverColor: hoverColor,
+        hoverBackgroundColor: hoverBackgroundColor,
+        hoverScale: _enableHover ? _hoverScale : 1.0,
+        hoverOffset: _enableHover ? Offset(_hoverSlide, 0.0) : Offset.zero,
         menuItems: items,
       ),
     );
@@ -717,6 +746,276 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final Widget hoverToggleCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hover styling',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _enableHover = true),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: _enableHover ? Colors.black : Colors.white,
+                  foregroundColor: _enableHover ? Colors.white : Colors.black,
+                  side: BorderSide(color: Colors.grey.shade200),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                ),
+                child: Text(
+                  'ENABLED',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _enableHover = false),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: !_enableHover ? Colors.black : Colors.white,
+                  foregroundColor: !_enableHover ? Colors.white : Colors.black,
+                  side: BorderSide(color: Colors.grey.shade200),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                ),
+                child: Text(
+                  'DISABLED',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final Widget hoverScaleCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Hover scale',
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              '${_hoverScale.toStringAsFixed(2)}x',
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 2.0,
+            activeTrackColor: Colors.black,
+            inactiveTrackColor: Colors.grey.shade200,
+            thumbColor: Colors.black,
+            overlayColor: Colors.black.withValues(alpha: 0.12),
+          ),
+          child: Slider(
+            value: _hoverScale,
+            min: 1.0,
+            max: 1.15,
+            onChanged: _enableHover
+                ? (val) => setState(() => _hoverScale = val)
+                : null,
+          ),
+        ),
+      ],
+    );
+
+    final Widget hoverSlideCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Hover slide',
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              _hoverSlide.toStringAsFixed(2),
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 2.0,
+            activeTrackColor: Colors.black,
+            inactiveTrackColor: Colors.grey.shade200,
+            thumbColor: Colors.black,
+            overlayColor: Colors.black.withValues(alpha: 0.12),
+          ),
+          child: Slider(
+            value: _hoverSlide,
+            min: 0.0,
+            max: 0.15,
+            onChanged: _enableHover
+                ? (val) => setState(() => _hoverSlide = val)
+                : null,
+          ),
+        ),
+      ],
+    );
+
+    final Widget hoverBgPresetCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hover background',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<String>(
+          initialValue: _hoverBgPreset,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+          ),
+          style: GoogleFonts.outfit(
+            color: Colors.black,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Colors.white,
+          items: const [
+            DropdownMenuItem(value: 'NONE', child: Text('NONE')),
+            DropdownMenuItem(value: 'WHITE', child: Text('TRANSLUCENT WHITE')),
+            DropdownMenuItem(value: 'PURPLE', child: Text('TRANSLUCENT VIOLET')),
+          ],
+          onChanged: _enableHover
+              ? (val) {
+                  if (val != null) {
+                    setState(() {
+                      _hoverBgPreset = val;
+                    });
+                  }
+                }
+              : null,
+        ),
+      ],
+    );
+
+    final Widget hoverColorPresetCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hover text/icon color',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<String>(
+          initialValue: _hoverColorPreset,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+          ),
+          style: GoogleFonts.outfit(
+            color: Colors.black,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Colors.white,
+          items: const [
+            DropdownMenuItem(value: 'ORIGINAL', child: Text('ORIGINAL')),
+            DropdownMenuItem(value: 'WHITE', child: Text('BRIGHT WHITE')),
+            DropdownMenuItem(value: 'AMBER', child: Text('NEON AMBER')),
+          ],
+          onChanged: _enableHover
+              ? (val) {
+                  if (val != null) {
+                    setState(() {
+                      _hoverColorPreset = val;
+                    });
+                  }
+                }
+              : null,
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       decoration: BoxDecoration(
@@ -802,6 +1101,63 @@ class _DemoScreenState extends State<DemoScreen> {
             alignmentCol,
             const SizedBox(height: 14.0),
             hapticCol,
+          ],
+          const SizedBox(height: 20.0),
+          const Divider(height: 1.0, color: Colors.black12),
+          const SizedBox(height: 20.0),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8.0),
+              Text(
+                'HOVER STYLING CONFIGURATOR',
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+          if (isWide) ...[
+            Row(
+              children: [
+                Expanded(child: hoverToggleCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: hoverScaleCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: hoverSlideCol),
+              ],
+            ),
+            const SizedBox(height: 14.0),
+            Row(
+              children: [
+                Expanded(child: hoverBgPresetCol),
+                const SizedBox(width: 14.0),
+                Expanded(child: hoverColorPresetCol),
+                const SizedBox(width: 14.0),
+                const Spacer(),
+              ],
+            ),
+          ] else ...[
+            hoverToggleCol,
+            const SizedBox(height: 14.0),
+            hoverScaleCol,
+            const SizedBox(height: 14.0),
+            hoverSlideCol,
+            const SizedBox(height: 14.0),
+            hoverBgPresetCol,
+            const SizedBox(height: 14.0),
+            hoverColorPresetCol,
           ],
         ],
       ),

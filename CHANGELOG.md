@@ -1,3 +1,14 @@
+## 1.3.0
+
+* Add customizable hover styles on menu items:
+  * `hoverColor` (`Color?`): Shifts text/icon color on hover.
+  * `hoverBackgroundColor` (`Color?`): Displays a smooth, material-style rounded pill background.
+  * `hoverScale` (`double`): Scales the menu item.
+  * `hoverOffset` (`Offset`): Slides/offsets the menu item.
+* Animate hover color changes smoothly using `TweenAnimationBuilder` (for icons and dropdown chevrons) and `AnimatedDefaultTextStyle` (for labels).
+* Disable hover effects and cursor changes for disabled menu items.
+* Update example app with a `HOVER STYLING CONFIGURATOR` section to test different hover colors, background pill overlays, scale levels, and slide displacements at runtime.
+
 ## 1.2.0
 
 * Add `isEnabled` property to `FluidMenuItem` (default `true`) to statically disable menu items. Disabled items are visually grayed out, ignore selection animations, and do not respond to tap/pointer interactions.

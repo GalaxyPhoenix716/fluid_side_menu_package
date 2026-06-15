@@ -281,6 +281,27 @@ class FluidSideMenu extends StatefulWidget {
   /// between sibling child items inside an expanded dropdown group.
   final EdgeInsets? subMenuItemPadding;
 
+  /// The color of the item label text and icon when hovered.
+  ///
+  /// Defaults to `null`, which leaves the color unchanged when hovered.
+  final Color? hoverColor;
+
+  /// The background color of a rounded pill shape behind the menu item when hovered.
+  ///
+  /// Defaults to `null`, meaning no background highlight pill is drawn.
+  final Color? hoverBackgroundColor;
+
+  /// The scale factor applied to the item when hovered.
+  ///
+  /// Defaults to `1.04`. Set to `1.0` to disable scale-on-hover.
+  final double hoverScale;
+
+  /// The translation offset applied to the item when hovered.
+  ///
+  /// Defaults to `Offset(0.04, 0.0)` (slides slightly to the right).
+  /// Set to `Offset.zero` to disable slide-on-hover.
+  final Offset hoverOffset;
+
   /// Creates a [FluidSideMenu] navigation drawer.
   ///
   /// Only [menuItems] is required. All other parameters have sensible defaults
@@ -321,6 +342,10 @@ class FluidSideMenu extends StatefulWidget {
     this.scaleChildItemsBasedOnDepth = true,
     this.menuItemPadding,
     this.subMenuItemPadding,
+    this.hoverColor,
+    this.hoverBackgroundColor,
+    this.hoverScale = 1.04,
+    this.hoverOffset = const Offset(0.04, 0.0),
   });
 
   @override
@@ -382,6 +407,20 @@ class FluidSideMenuState extends State<FluidSideMenu>
   /// this map take precedence over the static [FluidMenuItem.isEnabled] property.
   final Map<String, bool> _enabledOverrides = {};
 
+  /// The path of the currently hovered menu item.
+  ///
+  /// `null` when no menu item is hovered.
+  List<int>? _hoveredItemPath;
+
+  /// Helper to compare two item paths for equality.
+  bool _pathEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   /// Whether a horizontal drag gesture is currently being tracked.
   bool _isDragging = false;
 
@@ -426,6 +465,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
       if (status == AnimationStatus.dismissed) {
         setState(() {
           _tappedItemPath = null;
+          _hoveredItemPath = null;
         });
       }
     });
@@ -664,6 +704,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
       onHorizontalDragEnd: widget.enableSwipeGestures ? _handleDragEnd : null,
       behavior: HitTestBehavior.translucent,
       child: Stack(
+        fit: StackFit.expand,
         children: [
           // 1. Content layer (wrapped in RepaintBoundary for 60/120fps performance)
           RepaintBoundary(
@@ -932,9 +973,21 @@ class FluidSideMenuState extends State<FluidSideMenu>
                     )));
 
       final TextStyle resolvedTextStyle = baseStyle.copyWith(
-        color: resolvedTextColor,
         fontSize: fontSize,
       );
+
+      final bool isHovered =
+          !isDisabled &&
+          !isAnySelected &&
+          _hoveredItemPath != null &&
+          _pathEquals(_hoveredItemPath!, path);
+
+      final Color hoverIconColor = isHovered
+          ? (widget.hoverColor ?? resolvedIconColor)
+          : resolvedIconColor;
+      final Color hoverTextColor = isHovered
+          ? (widget.hoverColor ?? resolvedTextColor)
+          : resolvedTextColor;
 
       double itemScale = 1.0;
       double itemOpacity = 1.0;
@@ -977,6 +1030,10 @@ class FluidSideMenuState extends State<FluidSideMenu>
               ? 0.9
               : 1.0;
         }
+      } else if (isHovered) {
+        itemOpacity = 1.0;
+        itemScale = widget.hoverScale;
+        itemSlideOffset = widget.hoverOffset;
       }
 
       final double indentLeft =
@@ -996,6 +1053,23 @@ class FluidSideMenuState extends State<FluidSideMenu>
               : (onTap != null
                     ? SystemMouseCursors.click
                     : SystemMouseCursors.basic),
+          onEnter: (_) {
+            if (!isDisabled) {
+              setState(() {
+                _hoveredItemPath = path;
+              });
+            }
+          },
+          onExit: (_) {
+            if (!isDisabled) {
+              setState(() {
+                if (_hoveredItemPath != null &&
+                    _pathEquals(_hoveredItemPath!, path)) {
+                  _hoveredItemPath = null;
+                }
+              });
+            }
+          },
           child: GestureDetector(
             onTap: onTap,
             behavior: HitTestBehavior.opaque,
@@ -1010,83 +1084,121 @@ class FluidSideMenuState extends State<FluidSideMenu>
                 child: AnimatedOpacity(
                   opacity: itemOpacity,
                   duration: const Duration(milliseconds: 160),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (item.icon != null) ...[
-                        AnimatedSlide(
-                          offset: iconSlideOffset,
-                          duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeInOutCubic,
-                          child: IconTheme(
-                            data: IconThemeData(
-                              color: resolvedIconColor,
-                              size: iconSize,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOutCubic,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isHovered
+                          ? (widget.hoverBackgroundColor ?? Colors.transparent)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(24.0),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (item.icon != null) ...[
+                          AnimatedSlide(
+                            offset: iconSlideOffset,
+                            duration: const Duration(milliseconds: 260),
+                            curve: Curves.easeInOutCubic,
+                            child: TweenAnimationBuilder<Color?>(
+                              duration: const Duration(milliseconds: 200),
+                              tween: ColorTween(
+                                begin: resolvedIconColor,
+                                end: hoverIconColor,
+                              ),
+                              builder: (context, color, child) {
+                                return IconTheme(
+                                  data: IconThemeData(
+                                    color: color,
+                                    size: iconSize,
+                                  ),
+                                  child: item.icon!,
+                                );
+                              },
                             ),
-                            child: item.icon!,
                           ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeInOutCubic,
-                          width:
-                              isSelected &&
-                                  widget.selectAnimationType ==
-                                      FluidMenuSelectAnimationType.iconSlideSwap
-                              ? 0.0
-                              : itemSpacing,
-                        ),
-                      ],
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeInOutCubic,
-                        child: AnimatedOpacity(
-                          opacity: labelOpacity,
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeInOutCubic,
-                          child: SizedBox(
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 260),
+                            curve: Curves.easeInOutCubic,
                             width:
                                 isSelected &&
                                     widget.selectAnimationType ==
                                         FluidMenuSelectAnimationType
                                             .iconSlideSwap
                                 ? 0.0
-                                : null,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const NeverScrollableScrollPhysics(),
-                              child: AnimatedSlide(
-                                offset: labelSlideOffset,
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeInOutCubic,
-                                child: Text(
-                                  item.label,
-                                  maxLines: 1,
-                                  style: resolvedTextStyle,
+                                : itemSpacing,
+                          ),
+                        ],
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeInOutCubic,
+                          child: AnimatedOpacity(
+                            opacity: labelOpacity,
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeInOutCubic,
+                            child: SizedBox(
+                              width:
+                                  isSelected &&
+                                      widget.selectAnimationType ==
+                                          FluidMenuSelectAnimationType
+                                              .iconSlideSwap
+                                  ? 0.0
+                                  : null,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const NeverScrollableScrollPhysics(),
+                                child: AnimatedSlide(
+                                  offset: labelSlideOffset,
+                                  duration: const Duration(milliseconds: 260),
+                                  curve: Curves.easeInOutCubic,
+                                  child: AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 200),
+                                    style: resolvedTextStyle.copyWith(
+                                      color: hoverTextColor,
+                                    ),
+                                    child: Text(
+                                      item.label,
+                                      maxLines: 1,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (item.subItems != null &&
-                          item.subItems!.isNotEmpty) ...[
-                        const SizedBox(width: 8.0),
-                        AnimatedRotation(
-                          turns: isExpanded ? 0.5 : 0.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: Opacity(
-                            opacity: 0.7,
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              size: iconSize - 2,
-                              color: resolvedIconColor,
+                        if (item.subItems != null &&
+                            item.subItems!.isNotEmpty) ...[
+                          const SizedBox(width: 8.0),
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Opacity(
+                              opacity: 0.7,
+                              child: TweenAnimationBuilder<Color?>(
+                                duration: const Duration(milliseconds: 200),
+                                tween: ColorTween(
+                                  begin: resolvedIconColor,
+                                  end: hoverIconColor,
+                                ),
+                                builder: (context, color, child) {
+                                  return Icon(
+                                    Icons.keyboard_arrow_down,
+                                    size: iconSize - 2,
+                                    color: color,
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),

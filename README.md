@@ -320,6 +320,10 @@ To disable scrolling entirely and keep a fixed layout, set `enableScroll: false`
 | `revealOrigin` | `Offset?` | `null` | Custom origin point for the gooey reveal wave (defaults to menu button position). |
 | `enableHapticFeedback` | `bool` | `true` | Triggers haptic feedback at open, close, and item selection events. |
 | `itemAlignment` | `FluidMenuItemAlignment` | `center` | Horizontal alignment of menu items within the drawer (`left`, `center`, `right`). |
+| `hoverColor` | `Color?` | `null` | Color of the item label text and icon when hovered (keeps original if null). |
+| `hoverBackgroundColor` | `Color?` | `null` | Background color of a rounded pill shape behind the menu item when hovered. |
+| `hoverScale` | `double` | `1.04` | Scale factor applied to the menu item when hovered. |
+| `hoverOffset` | `Offset` | `Offset(0.04, 0.0)` | Translation offset (sliding effect) applied to the menu item when hovered. |
 | `onItemTapped` | `ValueChanged<int>?` | `null` | Callback triggered with the top-level item index when any item is selected. |
 | `onSubItemTapped` | `void Function(int, int)?` | `null` | Callback triggered with the parent index and child index when a nested item is selected. |
 | `menuHeader` | `Widget?` | `null` | Optional widget rendered at the top of the menu, above all items. |
