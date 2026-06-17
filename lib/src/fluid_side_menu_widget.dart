@@ -580,6 +580,7 @@ class FluidSideMenuState extends State<FluidSideMenu>
   /// to avoid the double-haptic issue that would occur if haptics were also
   /// fired on the snap-to-open/close at [_handleDragEnd].
   void _handleDragStart(DragStartDetails details) {
+    if (_isDragging) return; // Prevent double initialization
     if (!widget.enableSwipeGestures) return;
     if (_controller.isAnimating) return;
 
@@ -787,11 +788,47 @@ class FluidSideMenuState extends State<FluidSideMenu>
             ),
           ),
 
+          // Edge drag detector strip (only on top of content layer when menu is not fully open)
+          if (widget.enableSwipeGestures)
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                final double val = _animation.value;
+                if (val >= 1.0) return const SizedBox.shrink();
+                return Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  width: widget.edgeDragWidth,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragStart: _handleDragStart,
+                    onHorizontalDragUpdate: _handleDragUpdate,
+                    onHorizontalDragEnd: _handleDragEnd,
+                    child: const SizedBox.shrink(),
+                  ),
+                );
+              },
+            ),
+
           // 3. Menu overlay layer
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_isMenuInteractable,
-              child: RepaintBoundary(child: _buildMenuContent()),
+              child: RepaintBoundary(
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: close,
+                        child: const SizedBox.shrink(),
+                      ),
+                    ),
+                    _buildMenuContent(),
+                  ],
+                ),
+              ),
             ),
           ),
 

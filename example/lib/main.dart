@@ -70,6 +70,7 @@ class _DemoScreenState extends State<DemoScreen> {
   double _hoverSlide = 0.05;
   String _hoverBgPreset = 'WHITE'; // 'NONE', 'WHITE', 'PURPLE'
   String _hoverColorPreset = 'WHITE'; // 'ORIGINAL', 'WHITE', 'AMBER'
+  int _activeConfigTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -941,7 +942,10 @@ class _DemoScreenState extends State<DemoScreen> {
           items: const [
             DropdownMenuItem(value: 'NONE', child: Text('NONE')),
             DropdownMenuItem(value: 'WHITE', child: Text('TRANSLUCENT WHITE')),
-            DropdownMenuItem(value: 'PURPLE', child: Text('TRANSLUCENT VIOLET')),
+            DropdownMenuItem(
+              value: 'PURPLE',
+              child: Text('TRANSLUCENT VIOLET'),
+            ),
           ],
           onChanged: _enableHover
               ? (val) {
@@ -1016,6 +1020,162 @@ class _DemoScreenState extends State<DemoScreen> {
       ],
     );
 
+    final List<String> tabLabels = [
+      'TRANSITIONS',
+      'LAYOUT & GESTURES',
+      'HOVER AESTHETICS',
+    ];
+
+    final Widget tabHeader = Container(
+      height: 38,
+      padding: const EdgeInsets.all(4.0),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Row(
+        children: List.generate(tabLabels.length, (idx) {
+          final isSelected = _activeConfigTab == idx;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _activeConfigTab = idx),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9.0),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  tabLabels[idx],
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.black : Colors.black45,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+
+    Widget buildTabContent() {
+      if (_activeConfigTab == 0) {
+        if (isWide) {
+          return Row(
+            children: [
+              Expanded(child: entryAnimationCol),
+              const SizedBox(width: 14.0),
+              Expanded(child: selectAnimationCol),
+              const SizedBox(width: 14.0),
+              Expanded(child: curveCol),
+            ],
+          );
+        } else {
+          return Column(
+            children: [
+              entryAnimationCol,
+              const SizedBox(height: 14.0),
+              selectAnimationCol,
+              const SizedBox(height: 14.0),
+              curveCol,
+            ],
+          );
+        }
+      } else if (_activeConfigTab == 1) {
+        if (isWide) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: backgroundStyleCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: swipeGestureCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: originCol),
+                ],
+              ),
+              const SizedBox(height: 14.0),
+              Row(
+                children: [
+                  Expanded(child: alignmentCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: hapticCol),
+                ],
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: [
+              backgroundStyleCol,
+              const SizedBox(height: 14.0),
+              swipeGestureCol,
+              const SizedBox(height: 14.0),
+              originCol,
+              const SizedBox(height: 14.0),
+              alignmentCol,
+              const SizedBox(height: 14.0),
+              hapticCol,
+            ],
+          );
+        }
+      } else {
+        if (isWide) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: hoverToggleCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: hoverScaleCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: hoverSlideCol),
+                ],
+              ),
+              const SizedBox(height: 14.0),
+              Row(
+                children: [
+                  Expanded(child: hoverBgPresetCol),
+                  const SizedBox(width: 14.0),
+                  Expanded(child: hoverColorPresetCol),
+                  const SizedBox(width: 14.0),
+                  const Spacer(),
+                ],
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: [
+              hoverToggleCol,
+              const SizedBox(height: 14.0),
+              hoverScaleCol,
+              const SizedBox(height: 14.0),
+              hoverSlideCol,
+              const SizedBox(height: 14.0),
+              hoverBgPresetCol,
+              const SizedBox(height: 14.0),
+              hoverColorPresetCol,
+            ],
+          );
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       decoration: BoxDecoration(
@@ -1046,7 +1206,7 @@ class _DemoScreenState extends State<DemoScreen> {
               ),
               const SizedBox(width: 8.0),
               Text(
-                'TRANSITION CONFIGURATOR',
+                'FLUID SIDE MENU CONFIGURATOR',
                 style: GoogleFonts.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -1057,108 +1217,13 @@ class _DemoScreenState extends State<DemoScreen> {
             ],
           ),
           const SizedBox(height: 16.0),
-          if (isWide) ...[
-            Row(
-              children: [
-                Expanded(child: entryAnimationCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: selectAnimationCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: curveCol),
-              ],
-            ),
-            const SizedBox(height: 14.0),
-            Row(
-              children: [
-                Expanded(child: backgroundStyleCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: swipeGestureCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: originCol),
-              ],
-            ),
-            const SizedBox(height: 14.0),
-            Row(
-              children: [
-                Expanded(child: alignmentCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: hapticCol),
-              ],
-            ),
-          ] else ...[
-            entryAnimationCol,
-            const SizedBox(height: 14.0),
-            selectAnimationCol,
-            const SizedBox(height: 14.0),
-            curveCol,
-            const SizedBox(height: 14.0),
-            backgroundStyleCol,
-            const SizedBox(height: 14.0),
-            swipeGestureCol,
-            const SizedBox(height: 14.0),
-            originCol,
-            const SizedBox(height: 14.0),
-            alignmentCol,
-            const SizedBox(height: 14.0),
-            hapticCol,
-          ],
+          tabHeader,
           const SizedBox(height: 20.0),
-          const Divider(height: 1.0, color: Colors.black12),
-          const SizedBox(height: 20.0),
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8.0),
-              Text(
-                'HOVER STYLING CONFIGURATOR',
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOutCubic,
+            child: buildTabContent(),
           ),
-          const SizedBox(height: 16.0),
-          if (isWide) ...[
-            Row(
-              children: [
-                Expanded(child: hoverToggleCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: hoverScaleCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: hoverSlideCol),
-              ],
-            ),
-            const SizedBox(height: 14.0),
-            Row(
-              children: [
-                Expanded(child: hoverBgPresetCol),
-                const SizedBox(width: 14.0),
-                Expanded(child: hoverColorPresetCol),
-                const SizedBox(width: 14.0),
-                const Spacer(),
-              ],
-            ),
-          ] else ...[
-            hoverToggleCol,
-            const SizedBox(height: 14.0),
-            hoverScaleCol,
-            const SizedBox(height: 14.0),
-            hoverSlideCol,
-            const SizedBox(height: 14.0),
-            hoverBgPresetCol,
-            const SizedBox(height: 14.0),
-            hoverColorPresetCol,
-          ],
         ],
       ),
     );
@@ -1199,120 +1264,139 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _contactUsEnabled = true;
   bool _birthdayGiftsEnabled = true;
 
+  Widget _buildSwitchRow({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 2.0),
+            Text(
+              subtitle,
+              style: GoogleFonts.outfit(fontSize: 11, color: Colors.black38),
+            ),
+          ],
+        ),
+        Switch.adaptive(
+          value: value,
+          activeTrackColor: Colors.purpleAccent,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'HOME',
-                  style: GoogleFonts.outfit(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    letterSpacing: 2.0,
+      backgroundColor: const Color(0xFFF8F9FD),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'HOME',
+                    style: GoogleFonts.outfit(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      letterSpacing: 2.0,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  'Active Navigation Screen',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    color: Colors.black38,
-                    letterSpacing: 0.5,
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'Active Navigation Screen',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      color: Colors.black38,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24.0),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 4.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Enable 'Contact us' item:",
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                  const SizedBox(height: 24.0),
+                  Card(
+                    elevation: 0,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24.0),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'DYNAMIC ITEM CONTROLS',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black54,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 16.0),
+                            _buildSwitchRow(
+                              title: "Enable 'Contact us' item",
+                              subtitle:
+                                  "Toggles item interactability dynamically",
+                              value: _contactUsEnabled,
+                              onChanged: (val) {
+                                setState(() {
+                                  _contactUsEnabled = val;
+                                });
+                                FluidSideMenu.of(
+                                  context,
+                                )?.setItemEnabled([4], val);
+                              },
+                            ),
+                            const Divider(height: 24.0, color: Colors.black12),
+                            _buildSwitchRow(
+                              title: "Enable 'Birthday Gifts' sub-item",
+                              subtitle: "Toggles sub-menu item dynamically",
+                              value: _birthdayGiftsEnabled,
+                              onChanged: (val) {
+                                setState(() {
+                                  _birthdayGiftsEnabled = val;
+                                });
+                                FluidSideMenu.of(
+                                  context,
+                                )?.setItemEnabled([1, 1, 0], val);
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8.0),
-                      Switch.adaptive(
-                        value: _contactUsEnabled,
-                        activeTrackColor: Colors.purpleAccent,
-                        onChanged: (val) {
-                          setState(() {
-                            _contactUsEnabled = val;
-                          });
-                          // Path: [4] -> Contact us is the 5th item (index 4)
-                          FluidSideMenu.of(context)?.setItemEnabled([4], val);
-                        },
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12.0),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 4.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Enable 'Birthday Gifts' sub-item:",
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 8.0),
-                      Switch.adaptive(
-                        value: _birthdayGiftsEnabled,
-                        activeTrackColor: Colors.purpleAccent,
-                        onChanged: (val) {
-                          setState(() {
-                            _birthdayGiftsEnabled = val;
-                          });
-                          // Path: [1, 1, 0] -> Categories (1) -> Gifts (1) -> Birthday Gifts (0)
-                          FluidSideMenu.of(
-                            context,
-                          )?.setItemEnabled([1, 1, 0], val);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  const SizedBox(height: 24.0),
+                  widget.configuratorPanel,
+                ],
+              ),
             ),
           ),
-          Positioned(
-            left: 24.0,
-            right: 24.0,
-            bottom: 40.0,
-            child: widget.configuratorPanel,
-          ),
-        ],
+        ),
       ),
     );
   }
